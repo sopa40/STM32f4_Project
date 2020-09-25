@@ -49,6 +49,12 @@ struct sk_lcd {
 	unsigned int __isinitialized : 1;
 };
 
+/**
+ * returns address of the lcd struct
+ */
+
+struct sk_lcd *get_lcd(void);
+
 
 /**
  * Issue low-level LCD command

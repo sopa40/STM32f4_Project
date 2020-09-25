@@ -1,5 +1,6 @@
 #include "lcd_hd44780.h"
 #include <stddef.h>
+#include "tick.h"
 
 
 // Clear Display and Return Home commands
@@ -18,7 +19,7 @@ static const uint32_t DELAY_INIT0_US = 4100;
 static const uint32_t DELAY_INIT1_US = 100;
 
 //TODO: add delay_func_us
-static struct sk_lcd lcd = {
+struct sk_lcd lcd = {
   	.pin_group_data = (sk_pin_group*)&sk_io_lcd_data,
 	.pin_rs = &sk_io_lcd_rs,
 	.pin_en = &sk_io_lcd_en,
@@ -30,6 +31,10 @@ static struct sk_lcd lcd = {
 	.is4bitinterface = true,
 	.charmap_func = &sk_lcd_charmap_rus_cp1251
 };
+
+struct sk_lcd get_lcd(void) {
+	return &lcd;
+}
 
 /**
   * Private: Provides abstaction over two delay functions passed when constructing sk_lcd object

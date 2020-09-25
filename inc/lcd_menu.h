@@ -2,7 +2,6 @@
 #define LCD_MENU_H
 
 #include "lcd_hd44780.h"
-#include "tick.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -19,7 +19,8 @@
 	extern void initialise_monitor_handles(void);
 #endif
 
-static extern struct sk_lcd lcd;
+struct sk_lcd *lcd = get_lcd();
+
 
 volatile uint8_t pass_sym_arr[MAX_PASS_LEN];
 
@@ -53,7 +54,7 @@ void exti9_5_isr(void)
 	}
 	if (exti_get_flag_status(EXTI9)) {
 		sk_pin_toggle(sk_io_led_orange);
-		sk_lcd_cmd_shift(&lcd, false, false);
+		sk_lcd_cmd_shift(lcd, false, false);
 		exti_reset_request(EXTI9);
 	}
 }
@@ -64,13 +65,13 @@ void exti15_10_isr(void)
 {
 	if (exti_get_flag_status(EXTI11)) {
 		sk_pin_toggle(sk_io_led_orange);
-		sk_lcd_cmd_shift(&lcd, false, true);
+		sk_lcd_cmd_shift(lcd, false, true);
 		exti_reset_request(EXTI11);
 	}
 	if (exti_get_flag_status(EXTI15)) {
 		sk_pin_toggle(sk_io_led_blue);
 		handle_center_btn();
-		sk_lcd_cmd_shift(&lcd, false, true);
+		sk_lcd_cmd_shift(lcd, false, true);
 		exti_reset_request(EXTI15);
 	}
 }
@@ -111,13 +112,13 @@ int main (void)
 	cm_enable_interrupts();
 
 	sk_pin_group_set(sk_io_lcd_data, 0x00);
-	sk_lcd_init(&lcd);
-	sk_lcd_cmd_onoffctl(&lcd, true, false, false);
-	sk_lcd_set_backlight(&lcd, 200);
-	sk_lcd_cmd_setaddr(&lcd, 0x00, false);
-	lcd_putstring(&lcd, "   Press OK");
-	sk_lcd_cmd_setaddr(&lcd, 0x40, false);
-	lcd_putstring(&lcd, " To enter pass");
+	sk_lcd_init(lcd);
+	sk_lcd_cmd_onoffctl(lcd, true, false, false);
+	sk_lcd_set_backlight(lcd, 200);
+	sk_lcd_cmd_setaddr(lcd, 0x00, false);
+	lcd_putstring(lcd, "   Press OK");
+	sk_lcd_cmd_setaddr(lcd, 0x40, false);
+	lcd_putstring(lcd, " To enter pass");
 
 	/* configuration successful end */
 	sk_pin_set(sk_io_led_red, false);
