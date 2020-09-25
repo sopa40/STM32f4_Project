@@ -1,3 +1,9 @@
+# Based on GitHub C gitignore (https://github.com/github/gitignore)
+# Taken from https://github.com/kpi-keoa/glsk_stm32_toolchain
+
+# Project ignores
+build/
+
 # Prerequisites
 *.d
 
@@ -43,10 +49,10 @@
 *.pdb
 
 # Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# *.mod*
+# *.cmd
+# .tmp_versions/
+# modules.order
+# Module.symvers
+# Mkfile.old
+# dkms.conf
