@@ -18,24 +18,6 @@ static const uint32_t DELAY_ENA_STROBE_US = 1;
 static const uint32_t DELAY_INIT0_US = 4100;
 static const uint32_t DELAY_INIT1_US = 100;
 
-//TODO: add delay_func_us
-struct sk_lcd lcd = {
-  	.pin_group_data = (sk_pin_group*)&sk_io_lcd_data,
-	.pin_rs = &sk_io_lcd_rs,
-	.pin_en = &sk_io_lcd_en,
-	.pin_rw = &sk_io_lcd_rw,
-	.pin_bkl = &sk_io_lcd_bkl,
-	//.set_backlight_func = &timer1_set_pwm_backlight,
-	.delay_func_us = NULL,
-	.delay_func_ms = &sk_tick_delay_ms,
-	.is4bitinterface = true,
-	.charmap_func = &sk_lcd_charmap_rus_cp1251
-};
-
-struct sk_lcd get_lcd(void) {
-	return &lcd;
-}
-
 /**
   * Private: Provides abstaction over two delay functions passed when constructing sk_lcd object
   *
@@ -75,7 +57,25 @@ static void lcd_delay_us(struct sk_lcd *lcd, uint32_t us)
 		usfunc(us % 1000);
 }
 
+//TODO: add delay_func_us
+static struct sk_lcd __lcd_struct = {
+  	.pin_group_data = (sk_pin_group*)&sk_io_lcd_data,
+	.pin_rs = &sk_io_lcd_rs,
+	.pin_en = &sk_io_lcd_en,
+	.pin_rw = &sk_io_lcd_rw,
+	.pin_bkl = &sk_io_lcd_bkl,
+	//.set_backlight_func = &timer1_set_pwm_backlight,
+	.delay_func_us = NULL,
+	.delay_func_ms = &sk_tick_delay_ms,
+	.is4bitinterface = true,
+	.charmap_func = &sk_lcd_charmap_rus_cp1251
+};
 
+
+struct sk_lcd *get_lcd (void)
+{
+	return &__lcd_struct;
+}
 
 static void lcd_data_set_halfbyte(struct sk_lcd *lcd, uint8_t half)
 {

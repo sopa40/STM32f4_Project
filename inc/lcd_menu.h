@@ -2,6 +2,7 @@
 #define LCD_MENU_H
 
 #include "lcd_hd44780.h"
+#include "tick.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -21,8 +22,10 @@ struct Menu {
 	bool row;
 };
 
+struct Menu *get_lcd_menu (void);
 
+void init_menu_vars(void);
 
-
+void draw_pass_input(void);
 
 #endif //LCD_MENU_H

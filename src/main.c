@@ -12,23 +12,27 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define MAX_PASS_LEN 8
+#define MAX_PASS_LEN 6
 
 #if defined(USE_SEMIHOSTING) && USE_SEMIHOSTING
 	#include <stdio.h>
 	extern void initialise_monitor_handles(void);
 #endif
 
-struct sk_lcd *lcd = get_lcd();
-
-
 volatile uint8_t pass_sym_arr[MAX_PASS_LEN];
 
-struct Menu lcd_menu = {
-	.status = MENU_INIT,
-	.position = 0,
-	.row = 0,
-};
+static struct sk_lcd *lcd = NULL;
+static struct Menu *lcd_menu = NULL;
+
+
+void init_variables(void)
+{
+	lcd = get_lcd();
+	lcd_menu = get_lcd_menu();
+	init_interrput_vars();
+	init_menu_vars();
+}
+
 
 void init_exti_interrupt(uint32_t gpioport, uint16_t pin, enum exti_trigger_type trigger_type)
 {
@@ -76,25 +80,8 @@ void exti15_10_isr(void)
 	}
 }
 
-int main (void)
+void init_interrupts(void)
 {
-	initialise_monitor_handles();   		//for debugging
-
-	rcc_periph_clock_enable(RCC_GPIOD);		//LEDS
-	rcc_periph_clock_enable(RCC_GPIOA);		//center btn
-	rcc_periph_clock_enable(RCC_GPIOC);		//other btns
-	rcc_periph_clock_enable(RCC_GPIOE);		//LCD display
-	rcc_periph_clock_enable(RCC_SYSCFG);	//for EXTI interrupts
-
-	glsk_pins_init(false);
-
-	/* configuration start */
-	sk_pin_set(sk_io_led_red, true);
-
-
-	sk_tick_init(16000000ul / 10000ul);
-
-
 	init_exti_interrupt(GPIOA, EXTI15, EXTI_TRIGGER_RISING);
 	init_exti_interrupt(GPIOC, EXTI6, EXTI_TRIGGER_RISING);
 	init_exti_interrupt(GPIOC, EXTI8, EXTI_TRIGGER_RISING);
@@ -110,6 +97,34 @@ int main (void)
 	nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 
 	cm_enable_interrupts();
+}
+
+int main (void)
+{
+	initialise_monitor_handles();   		//for debugging
+	init_variables();
+
+
+
+	rcc_periph_clock_enable(RCC_GPIOD);		//LEDS
+	rcc_periph_clock_enable(RCC_GPIOA);		//center btn
+	rcc_periph_clock_enable(RCC_GPIOC);		//other btns
+	rcc_periph_clock_enable(RCC_GPIOE);		//LCD display
+	rcc_periph_clock_enable(RCC_SYSCFG);	//for EXTI interrupts
+
+	glsk_pins_init(false);
+
+	/* configuration start */
+	sk_pin_set(sk_io_led_red, true);
+
+	init_interrupts();
+
+	sk_tick_init(16000000ul / 10000ul);
+
+
+
+
+
 
 	sk_pin_group_set(sk_io_lcd_data, 0x00);
 	sk_lcd_init(lcd);
@@ -124,11 +139,10 @@ int main (void)
 	sk_pin_set(sk_io_led_red, false);
 
 
-
-
-
-
-
+	char buffer[20];
+	snprintf(buffer, sizeof(buffer), "pos:%Xh", (unsigned int)lcd_menu->position);
+	sk_lcd_cmd_clear(lcd);
+	lcd_putstring(lcd, buffer);
 
 
 	while (1) {
