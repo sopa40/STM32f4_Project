@@ -26,6 +26,12 @@ static struct sk_lcd *lcd = NULL;
 static struct Menu *lcd_menu = NULL;
 
 
+
+uint8_t read_status_reg = 0x05;
+
+
+
+
 void init_variables(void)
 {
 	lcd = get_lcd();
@@ -100,14 +106,25 @@ void init_interrupts(void)
 	cm_enable_interrupts();
 }
 
+void flash_test(void)
+{
+	write_enable();
+	flash_show_status_reg();
+    uint32_t addr = 0x0000FF;
+    flash_write_byte(addr, 0x08);
+	flash_show_status_reg();
+    uint8_t test_byte = flash_read_byte(addr);
 
-struct __attribute__((packed, aligned(1)))
-       __attribute__(( scalar_storage_order("little-endian") ))
-	   flash_jedec_id {
-	// order matters here
-	uint16_t device_id;
-	uint8_t manufacturer;
-};
+    char buffer[20];
+    sk_lcd_cmd_setaddr(lcd, 0x00, false);
+    snprintf(buffer, sizeof(buffer), "test:");
+    lcd_putstring(lcd, buffer);
+
+    sk_lcd_cmd_setaddr(lcd, 0x40, false);
+    snprintf(buffer, sizeof(buffer), "%Xh", test_byte);
+    lcd_putstring(lcd, buffer);
+
+}
 
 
 int main (void)
@@ -143,37 +160,12 @@ int main (void)
 	// sk_lcd_cmd_setaddr(lcd, 0x40, false);
 	// lcd_putstring(lcd, " To enter pass1");
 
-	uint8_t status = 0;
-	uint8_t test_byte = 0xBC;
-	uint8_t register_value = 0x0A;
-	char buffer[20];
+	flash_show_status_reg();
+	write_enable();
+	flash_show_status_reg();
+	flash_show_status_reg();
+	flash_test();
 
-	status = get_status_register();
-	sk_lcd_cmd_setaddr(lcd, 0x00, false);
-	snprintf(buffer, sizeof(buffer), "Status:%u", status);
-	lcd_putstring(lcd, buffer);
-
-	lock_flash_for_writing();
-
-	status = get_status_register();
-	sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	snprintf(buffer, sizeof(buffer), "New status:%u", status);
-	lcd_putstring(lcd, buffer);
-
-	lock_flash_for_writing();
-
-	status = get_status_register();
-	sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	snprintf(buffer, sizeof(buffer), "New status:%u", status);
-	lcd_putstring(lcd, buffer);
-
-	write_byte(0x00, test_byte);
-
-
-	// register_value = read_byte(0x00);
-	// sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	// snprintf(buffer, sizeof(buffer), "Reg value:%u", register_value);
-	// lcd_putstring(lcd, buffer);
 
 
 

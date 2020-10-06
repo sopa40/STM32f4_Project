@@ -13,6 +13,26 @@ void cs_set(bool state);
 
 void write_enable(void);
 
+void flash_unlock(void);
+
+void flash_lock(void);
+
+bool is_busy(void);
+
+void flash_show_status_reg(void);
+
+void flash_write_byte(uint32_t addr, uint8_t data);
+
+int8_t flash_read_byte(uint32_t addr);
+
+void flash_erase_full(void);
+
+
+
+
+
+
+
 uint8_t get_status_register(void);
 
 void unlock_flash_for_writing(void);

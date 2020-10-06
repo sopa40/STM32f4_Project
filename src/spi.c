@@ -9,10 +9,24 @@
 #include <libopencm3/stm32/spi.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #include <stdio.h>
 
 #define BUSY_BIT 1 << 0
+
+const uint8_t cmd_jedec_id_get = 0x9F;
+const uint8_t cmd_write_enable = 0x06;
+const uint8_t cmd_write_disable = 0x04;
+const uint8_t cmd_write_byte = 0x02;
+const uint8_t cmd_erase_full = 0xC7;
+const uint8_t cmd_erase_64kb = 0xD8;
+const uint8_t cmd_erase_32kb = 0x52;
+const uint8_t cmd_erase_4kb = 0x20;
+const uint8_t cmd_read_status_reg = 0x05;
+const uint8_t cmd_read = 0x03;
+const uint8_t cmd_write_status_register = 0x01;
+
 
 void clock_init(void)
 {
@@ -135,6 +149,7 @@ void flash_tx(uint32_t len, const void *data)
 		return;
 
 	for (int32_t i = len - 1; i >= 0; i--) {
+		printf("sending %u\n", d[i]);
 		spi_send(SPI1, d[i]);
 		spi_read(SPI1);		// dummy read to provide delay
 	}
@@ -161,6 +176,7 @@ void flash_rx(uint32_t len, const void *data)
 	}
 }
 
+
 uint8_t get_status_register(void)
 {
 		uint8_t result_status = 0;
@@ -178,12 +194,105 @@ uint8_t get_status_register(void)
 
 void write_enable(void)
 {
-	cs_set(1);
-	cs_set(0);
-	uint8_t wren = 0x06;
-	flash_tx(1, &wren);
-	printf("write enabled, status is %u\n", get_status_register());
+    cs_set(0);
+    flash_tx(1, &cmd_write_enable);
+    cs_set(1);
 }
+
+void flash_unlock(void)
+{
+    uint8_t reg = 0x00;
+    cs_set(0);
+    flash_tx(1, &cmd_write_status_register);
+    flash_tx(1, &reg);
+    cs_set(1);
+}
+
+void flash_lock(void)
+{
+    uint8_t reg = 0xFF;
+    cs_set(0);
+    flash_tx(1, &cmd_write_status_register);
+    flash_tx(1, &reg);
+    cs_set(1);
+}
+
+bool is_busy(void)
+{
+	uint8_t status_register;
+    cs_set(0);
+    flash_tx(1, &cmd_read_status_reg);
+    flash_rx(1, &status_register);
+    cs_set(1);
+    return status_register & BUSY_BIT;
+}
+
+// Displaying status register in decimal format
+void flash_show_status_reg(void)
+{
+	uint8_t reg = 0;
+    cs_set(0);
+    flash_tx(1, &cmd_read_status_reg);
+    flash_rx(1, &reg);
+    cs_set(1);
+	printf("STATUS REG IS %u\n", reg);
+}
+
+
+static void send_addr(uint32_t addr)
+{
+	uint8_t addr_part = (uint8_t) (addr >> 16);
+	flash_tx(1, &addr_part);
+	addr_part = (uint8_t) (addr >> 8);
+    flash_tx(1, &addr_part);
+	addr_part = (uint8_t) (addr);
+    flash_tx(1, &addr_part);
+}
+
+void flash_write_byte(uint32_t addr, uint8_t data)
+{
+    while(is_busy());
+	write_enable();
+	flash_show_status_reg();
+    cs_set(0);
+    flash_tx(1, &cmd_write_byte);
+	send_addr(addr);
+    flash_tx(1, &data);
+    cs_set(1);
+}
+
+uint8_t flash_read_byte(uint32_t addr)
+{
+	uint8_t data_read;
+    while(is_busy());
+    cs_set(0);
+    flash_tx(1, &cmd_read);
+	send_addr(addr);
+    flash_rx(1, &data_read);
+    cs_set(1);
+    return data_read;
+}
+
+void flash_erase_full(void)
+{
+    while(is_busy());
+    cs_set(0);
+    flash_tx(1, &cmd_erase_full);
+    cs_set(1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void unlock_flash_for_writing(void)
 {
@@ -208,85 +317,3 @@ void lock_flash_for_writing(void)
 	spi_send(SPI1, lock_all);
 	cs_set(1);
 }
-
-void send_addr(uint32_t addr)
-{
-	uint8_t addr_part = (uint8_t) (addr >> 16);
-	flash_tx(1, &addr_part);
-	addr_part = (uint8_t) (addr >> 8);
-	flash_tx(1, &addr_part);
-	addr_part = (uint8_t) addr;
-	flash_tx(1, &addr_part);
-}
-
-void write_byte(uint32_t addr, uint8_t data)
-{
-	uint8_t write_byte_program = 0x02;
-	write_enable();
-	printf("status is %u\n", get_status_register());
-	flash_tx(1, write_byte_program);
-	send_addr(addr);
-	spi_send(SPI1, data);
-	cs_set(1);
-}
-
-uint8_t read_byte(uint32_t addr)
-{
-	while((get_status_register() & BUSY_BIT) != 0);
-	uint8_t read_program = 0x03;
-	uint8_t result_byte = 0;
-	cs_set(0);
-	flash_tx(1, &read_program);
-	uint8_t addr_part = (uint8_t) (addr >> 16);
-	flash_tx(1, &addr_part);
-	addr_part = (uint8_t) (addr >> 8);
-	flash_tx(1, &addr_part);
-	addr_part = (uint8_t) addr;
-	flash_tx(1, &addr_part);
-	flash_rx(1, &result_byte);
-	cs_set(1);
-	return result_byte;
-}
-
-void read_data(uint32_t addr, uint32_t size, const void *data)
-{
-	uint8_t read_program = 0x03;
-	uint8_t *d = data;
-	if ((!size) || (NULL == d))
-		return;
-	cs_set(0);
-	flash_tx(1, &read_program);
-	uint8_t addr_part = (uint8_t) (addr >> 16);
-	flash_tx(1, &addr_part);
-	addr_part = (uint8_t) (addr >> 8);
-	flash_tx(1, &addr_part);
-	addr_part = (uint8_t) addr;
-	flash_tx(1, &addr_part);
-	flash_rx(size, d);
-	cs_set(0);
-}
-
-
-// sk_pin_set(sk_io_led_green, true);
-// cs_set(0);		// assert enable signal
-//
-// const uint8_t cmd_jedec_id_get = 0x9F;
-// flash_tx(1, &cmd_jedec_id_get);
-//
-// struct flash_jedec_id jedec_id = { 0 };
-// flash_rx(sizeof(jedec_id), &jedec_id);
-//
-// cs_set(1);
-// sk_pin_set(sk_io_led_green, false);
-//
-// char buffer[20];
-// sk_lcd_cmd_setaddr(&lcd, 0x00, false);
-// snprintf(buffer, sizeof(buffer), "Manufacturer:%Xh", (unsigned int)jedec_id.manufacturer);
-// lcd_putstring(&lcd, buffer);
-//
-// sk_lcd_cmd_setaddr(&lcd, 0x40, false);
-// snprintf(buffer, sizeof(buffer), "Serial:%Xh", (unsigned int)jedec_id.device_id);
-// lcd_putstring(&lcd, buffer);
-//
-// sk_pin_toggle(sk_io_led_orange);
-// sk_tick_delay_ms(500);
