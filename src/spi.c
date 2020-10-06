@@ -149,7 +149,6 @@ void flash_tx(uint32_t len, const void *data)
 		return;
 
 	for (int32_t i = len - 1; i >= 0; i--) {
-		printf("sending %u\n", d[i]);
 		spi_send(SPI1, d[i]);
 		spi_read(SPI1);		// dummy read to provide delay
 	}
@@ -199,6 +198,13 @@ void write_enable(void)
     cs_set(1);
 }
 
+void write_disable(void)
+{
+    cs_set(0);
+    flash_tx(1, &cmd_write_disable);
+    cs_set(1);
+}
+
 void flash_unlock(void)
 {
     uint8_t reg = 0x00;
@@ -235,7 +241,6 @@ void flash_show_status_reg(void)
     flash_tx(1, &cmd_read_status_reg);
     flash_rx(1, &reg);
     cs_set(1);
-	printf("STATUS REG IS %u\n", reg);
 }
 
 
@@ -259,6 +264,7 @@ void flash_write_byte(uint32_t addr, uint8_t data)
 	send_addr(addr);
     flash_tx(1, &data);
     cs_set(1);
+	write_disable();
 }
 
 uint8_t flash_read_byte(uint32_t addr)
@@ -281,39 +287,17 @@ void flash_erase_full(void)
     cs_set(1);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-void unlock_flash_for_writing(void)
-{
-	uint8_t wsr = 0x01;
-	uint8_t unlock_all = 0x00;
-
-	write_enable();
-	/* here writing should be done without delay */
-	spi_send(SPI1, wsr);
-	spi_send(SPI1, unlock_all);
-	cs_set(1);
-}
-
-void lock_flash_for_writing(void)
-{
-	uint8_t wsr = 0x01;
-	uint8_t lock_all = 0x00 | 1 << 2 | 1 << 3 | 1 << 4;
-
-	write_enable();
-	/* here writing should be done without delay */
-	spi_send(SPI1, wsr);
-	spi_send(SPI1, lock_all);
-	cs_set(1);
-}
+// void flash_test(void)
+// {
+// 	write_enable();
+// 	flash_erase_full();
+// 	write_enable();
+// 	uint32_t addr0 = 0x000000;
+//     flash_write_byte(addr0, 0xFF);
+//     uint8_t test_byte = flash_read_byte(addr0);
+//
+//     char buffer[20];
+//     sk_lcd_cmd_setaddr(lcd, 0x00, false);
+//     snprintf(buffer, sizeof(buffer), "test: %Xh", test_byte);
+//     lcd_putstring(lcd, buffer);
+// }

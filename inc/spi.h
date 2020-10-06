@@ -13,6 +13,8 @@ void cs_set(bool state);
 
 void write_enable(void);
 
+void write_disable(void);
+
 void flash_unlock(void);
 
 void flash_lock(void);

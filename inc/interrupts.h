@@ -8,4 +8,8 @@ void init_interrput_vars(void);
 
 void handle_center_btn(void);
 
+void handle_left_btn(void);
+
+
+
 #endif //INTERRUPTS_H

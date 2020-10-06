@@ -20,7 +20,6 @@ void handle_center_btn(void)
             lcd_menu->status = ENTER_PASS;
             break;
         case ENTER_PASS:
-            sk_lcd_cmd_clear(lcd);
             break;
         default:
             sk_lcd_cmd_clear(lcd);
@@ -28,4 +27,15 @@ void handle_center_btn(void)
             break;
     }
 	sk_lcd_cmd_onoffctl(lcd, true, true, true);
+}
+
+void handle_left_btn(void)
+{
+    switch(lcd_menu->status) {
+        case ENTER_PASS:
+            move_cursor_left();
+            break;
+        default:
+            break;
+    }
 }

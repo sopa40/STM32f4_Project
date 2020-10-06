@@ -28,4 +28,6 @@ void init_menu_vars(void);
 
 void draw_pass_input(void);
 
+void move_cursor_left(void);
+
 #endif //LCD_MENU_H

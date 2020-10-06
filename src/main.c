@@ -27,10 +27,6 @@ static struct Menu *lcd_menu = NULL;
 
 
 
-uint8_t read_status_reg = 0x05;
-
-
-
 
 void init_variables(void)
 {
@@ -64,6 +60,7 @@ void exti9_5_isr(void)
 		exti_reset_request(EXTI8);
 	}
 	if (exti_get_flag_status(EXTI9)) {
+		handle_left_btn();
 		sk_pin_toggle(sk_io_led_orange);
 		sk_lcd_cmd_shift(lcd, false, false);
 		exti_reset_request(EXTI9);
@@ -106,27 +103,6 @@ void init_interrupts(void)
 	cm_enable_interrupts();
 }
 
-void flash_test(void)
-{
-	write_enable();
-	flash_show_status_reg();
-    uint32_t addr = 0x0000FF;
-    flash_write_byte(addr, 0x08);
-	flash_show_status_reg();
-    uint8_t test_byte = flash_read_byte(addr);
-
-    char buffer[20];
-    sk_lcd_cmd_setaddr(lcd, 0x00, false);
-    snprintf(buffer, sizeof(buffer), "test:");
-    lcd_putstring(lcd, buffer);
-
-    sk_lcd_cmd_setaddr(lcd, 0x40, false);
-    snprintf(buffer, sizeof(buffer), "%Xh", test_byte);
-    lcd_putstring(lcd, buffer);
-
-}
-
-
 int main (void)
 {
 	initialise_monitor_handles();   		//for debugging
@@ -150,21 +126,15 @@ int main (void)
 	sk_tick_init(16000000ul / 10000ul);
 
 
-
 	sk_pin_group_set(sk_io_lcd_data, 0x00);
 	sk_lcd_init(lcd);
 	sk_lcd_cmd_onoffctl(lcd, true, false, false);
 	sk_lcd_set_backlight(lcd, 200);
 	sk_lcd_cmd_setaddr(lcd, 0x00, false);
-	// lcd_putstring(lcd, "   Press OK");
-	// sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	// lcd_putstring(lcd, " To enter pass1");
+	lcd_putstring(lcd, "   Press OK");
+	sk_lcd_cmd_setaddr(lcd, 0x40, false);
+	lcd_putstring(lcd, " To enter pass1");
 
-	flash_show_status_reg();
-	write_enable();
-	flash_show_status_reg();
-	flash_show_status_reg();
-	flash_test();
 
 
 
