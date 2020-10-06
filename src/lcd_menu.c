@@ -24,6 +24,5 @@ void draw_pass_input(void)
 {
     sk_lcd_cmd_clear(lcd);
     lcd_putstring(lcd, "     ******      ");
-    lcd_menu.
     //sk_lcd_cmd_setaddr(&lcd, 0x40, false);
 }

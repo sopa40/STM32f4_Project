@@ -3,7 +3,7 @@ TARGET = main
 # All source files go here:
 SRCS = $(TARGET).c
 # other sources added like that
-SRCS += pin.c tick.c lcd_hd44780.c interrupts.c lcd_menu.c
+SRCS += pin.c tick.c spi.c lcd_hd44780.c interrupts.c lcd_menu.c 
 # User defines
 DEFINES = GLSK_BOARD=1
 # The libs which are linked to the resulting target

@@ -19,6 +19,9 @@ void handle_center_btn(void)
             draw_pass_input();
             lcd_menu->status = ENTER_PASS;
             break;
+        case ENTER_PASS:
+            sk_lcd_cmd_clear(lcd);
+            break;
         default:
             sk_lcd_cmd_clear(lcd);
             lcd_putstring(lcd, "some error");

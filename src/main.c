@@ -1,6 +1,7 @@
 #include "lcd_menu.h"
 #include "interrupts.h"
 #include "tick.h"
+#include "spi.h"
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
@@ -99,12 +100,23 @@ void init_interrupts(void)
 	cm_enable_interrupts();
 }
 
+
+struct __attribute__((packed, aligned(1)))
+       __attribute__(( scalar_storage_order("little-endian") ))
+	   flash_jedec_id {
+	// order matters here
+	uint16_t device_id;
+	uint8_t manufacturer;
+};
+
+
 int main (void)
 {
 	initialise_monitor_handles();   		//for debugging
 	init_variables();
 
-
+ 	clock_init();
+ 	spi_init();
 
 	rcc_periph_clock_enable(RCC_GPIOD);		//LEDS
 	rcc_periph_clock_enable(RCC_GPIOA);		//center btn
@@ -113,7 +125,6 @@ int main (void)
 	rcc_periph_clock_enable(RCC_SYSCFG);	//for EXTI interrupts
 
 	glsk_pins_init(false);
-
 	/* configuration start */
 	sk_pin_set(sk_io_led_red, true);
 
@@ -123,27 +134,53 @@ int main (void)
 
 
 
-
-
-
 	sk_pin_group_set(sk_io_lcd_data, 0x00);
 	sk_lcd_init(lcd);
 	sk_lcd_cmd_onoffctl(lcd, true, false, false);
 	sk_lcd_set_backlight(lcd, 200);
 	sk_lcd_cmd_setaddr(lcd, 0x00, false);
-	lcd_putstring(lcd, "   Press OK");
+	// lcd_putstring(lcd, "   Press OK");
+	// sk_lcd_cmd_setaddr(lcd, 0x40, false);
+	// lcd_putstring(lcd, " To enter pass1");
+
+	uint8_t status = 0;
+	uint8_t test_byte = 0xBC;
+	uint8_t register_value = 0x0A;
+	char buffer[20];
+
+	status = get_status_register();
+	sk_lcd_cmd_setaddr(lcd, 0x00, false);
+	snprintf(buffer, sizeof(buffer), "Status:%u", status);
+	lcd_putstring(lcd, buffer);
+
+	lock_flash_for_writing();
+
+	status = get_status_register();
 	sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	lcd_putstring(lcd, " To enter pass");
+	snprintf(buffer, sizeof(buffer), "New status:%u", status);
+	lcd_putstring(lcd, buffer);
+
+	lock_flash_for_writing();
+
+	status = get_status_register();
+	sk_lcd_cmd_setaddr(lcd, 0x40, false);
+	snprintf(buffer, sizeof(buffer), "New status:%u", status);
+	lcd_putstring(lcd, buffer);
+
+	write_byte(0x00, test_byte);
+
+
+	// register_value = read_byte(0x00);
+	// sk_lcd_cmd_setaddr(lcd, 0x40, false);
+	// snprintf(buffer, sizeof(buffer), "Reg value:%u", register_value);
+	// lcd_putstring(lcd, buffer);
+
+
+
+
 
 	/* configuration successful end */
 	sk_pin_set(sk_io_led_red, false);
-
-
-	char buffer[20];
-	snprintf(buffer, sizeof(buffer), "pos:%Xh", (unsigned int)lcd_menu->position);
-	sk_lcd_cmd_clear(lcd);
-	lcd_putstring(lcd, buffer);
-
 
 	while (1) {
 

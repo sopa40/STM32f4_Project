@@ -202,6 +202,7 @@ extern const sk_pin sk_io_lcd_bkl;
 extern const sk_pin sk_io_lcd_rs;
 extern const sk_pin sk_io_lcd_rw;
 extern const sk_pin sk_io_lcd_en;
+extern const sk_pin sk_io_spiflash_ce;
 
 extern const sk_pin_group sk_io_lcd_data;
 
