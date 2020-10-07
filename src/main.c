@@ -13,18 +13,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define MAX_PASS_LEN 6
-
 #if defined(USE_SEMIHOSTING) && USE_SEMIHOSTING
 	#include <stdio.h>
 	extern void initialise_monitor_handles(void);
 #endif
 
-volatile uint8_t pass_sym_arr[MAX_PASS_LEN];
 
 static struct sk_lcd *lcd = NULL;
 static struct Menu *lcd_menu = NULL;
-
 
 
 
@@ -36,52 +32,12 @@ void init_variables(void)
 	init_menu_vars();
 }
 
-
 void init_exti_interrupt(uint32_t gpioport, uint16_t pin, enum exti_trigger_type trigger_type)
 {
 	exti_select_source(pin, gpioport);
 	exti_set_trigger(pin, trigger_type);
 	exti_enable_request(pin);
 	exti_reset_request(pin);
-}
-
-//TODO: debounce buttons
-//PC6 top
-//PC8 bottom
-//PC9 left
-void exti9_5_isr(void)
-{
-	if (exti_get_flag_status(EXTI6)) {
-		sk_pin_toggle(sk_io_led_red);
-		exti_reset_request(EXTI6);
-	}
-	if (exti_get_flag_status(EXTI8)) {
-		sk_pin_toggle(sk_io_led_green);
-		exti_reset_request(EXTI8);
-	}
-	if (exti_get_flag_status(EXTI9)) {
-		handle_left_btn();
-		sk_pin_toggle(sk_io_led_orange);
-		sk_lcd_cmd_shift(lcd, false, false);
-		exti_reset_request(EXTI9);
-	}
-}
-
-//PC11 right
-//PA15 mid
-void exti15_10_isr(void)
-{
-	if (exti_get_flag_status(EXTI11)) {
-		sk_pin_toggle(sk_io_led_orange);
-		sk_lcd_cmd_shift(lcd, false, true);
-		exti_reset_request(EXTI11);
-	}
-	if (exti_get_flag_status(EXTI15)) {
-		sk_pin_toggle(sk_io_led_blue);
-		handle_center_btn();
-		sk_lcd_cmd_shift(lcd, false, true);
-		exti_reset_request(EXTI15);
-	}
 }
 
 void init_interrupts(void)
@@ -103,11 +59,12 @@ void init_interrupts(void)
 	cm_enable_interrupts();
 }
 
+
+
 int main (void)
 {
 	initialise_monitor_handles();   		//for debugging
 	init_variables();
-
  	clock_init();
  	spi_init();
 
@@ -125,21 +82,7 @@ int main (void)
 
 	sk_tick_init(16000000ul / 10000ul);
 
-
-	sk_pin_group_set(sk_io_lcd_data, 0x00);
-	sk_lcd_init(lcd);
-	sk_lcd_cmd_onoffctl(lcd, true, false, false);
-	sk_lcd_set_backlight(lcd, 200);
-	sk_lcd_cmd_setaddr(lcd, 0x00, false);
-	lcd_putstring(lcd, "   Press OK");
-	sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	lcd_putstring(lcd, " To enter pass1");
-
-
-
-
-
-
+	init_lcd_with_settings();
 
 	/* configuration successful end */
 	sk_pin_set(sk_io_led_red, false);

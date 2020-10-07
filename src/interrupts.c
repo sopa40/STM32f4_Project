@@ -1,5 +1,12 @@
 #include "interrupts.h"
 #include "lcd_menu.h"
+#include <libopencm3/cm3/cortex.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/scb.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/exti.h>
+#include <libopencm3/stm32/timer.h>
 
 #include <stdio.h>
 
@@ -20,6 +27,7 @@ void handle_center_btn(void)
             lcd_menu->status = ENTER_PASS;
             break;
         case ENTER_PASS:
+            print_error("Please enter pass");
             break;
         default:
             sk_lcd_cmd_clear(lcd);
@@ -38,4 +46,52 @@ void handle_left_btn(void)
         default:
             break;
     }
+}
+
+void handle_right_btn(void)
+{
+    switch(lcd_menu->status) {
+        case ENTER_PASS:
+            move_cursor_right();
+            break;
+        default:
+            break;
+    }
+}
+
+//TODO: debounce buttons
+//PC6 top
+//PC8 bottom
+//PC9 left
+void exti9_5_isr(void)
+{
+	if (exti_get_flag_status(EXTI6)) {
+		sk_pin_toggle(sk_io_led_red);
+		exti_reset_request(EXTI6);
+	}
+	if (exti_get_flag_status(EXTI8)) {
+		sk_pin_toggle(sk_io_led_green);
+		exti_reset_request(EXTI8);
+	}
+	if (exti_get_flag_status(EXTI9)) {
+        sk_pin_toggle(sk_io_led_orange);
+		handle_left_btn();
+		exti_reset_request(EXTI9);
+	}
+}
+
+//PC11 right
+//PA15 mid
+void exti15_10_isr(void)
+{
+	if (exti_get_flag_status(EXTI11)) {
+		sk_pin_toggle(sk_io_led_orange);
+        handle_right_btn();
+		exti_reset_request(EXTI11);
+	}
+	if (exti_get_flag_status(EXTI15)) {
+		sk_pin_toggle(sk_io_led_blue);
+		handle_center_btn();
+		exti_reset_request(EXTI15);
+	}
 }

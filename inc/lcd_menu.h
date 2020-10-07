@@ -26,8 +26,16 @@ struct Menu *get_lcd_menu (void);
 
 void init_menu_vars(void);
 
+void init_lcd_with_settings(void);
+
+void print_error(const char *str);
+
 void draw_pass_input(void);
 
 void move_cursor_left(void);
+
+void move_cursor_right(void);
+
+void show_symbol(void);
 
 #endif //LCD_MENU_H
