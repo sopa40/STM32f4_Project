@@ -44,16 +44,19 @@ void init_exti_interrupt(uint32_t gpioport, uint16_t pin, enum exti_trigger_type
 void init_interrupts(void)
 {
 	init_exti_interrupt(GPIOA, EXTI15, EXTI_TRIGGER_RISING);
+	init_exti_interrupt(GPIOA, EXTI0, EXTI_TRIGGER_RISING);
 	init_exti_interrupt(GPIOC, EXTI6, EXTI_TRIGGER_RISING);
 	init_exti_interrupt(GPIOC, EXTI8, EXTI_TRIGGER_RISING);
 	init_exti_interrupt(GPIOC, EXTI9, EXTI_TRIGGER_RISING);
 	init_exti_interrupt(GPIOC, EXTI11, EXTI_TRIGGER_RISING);
 
 
-	nvic_set_priority(NVIC_EXTI9_5_IRQ, 2 << 4);
-	nvic_set_priority(NVIC_EXTI15_10_IRQ, 2 << 4);
 	nvic_set_priority(NVIC_SYSTICK_IRQ, 1 << 4);
+	nvic_set_priority(NVIC_EXTI0_IRQ, 2 << 4);
+	nvic_set_priority(NVIC_EXTI9_5_IRQ, 3 << 4);
+	nvic_set_priority(NVIC_EXTI15_10_IRQ, 3 << 4);
 
+	nvic_enable_irq(NVIC_EXTI0_IRQ);
 	nvic_enable_irq(NVIC_EXTI9_5_IRQ);
 	nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 
@@ -70,7 +73,7 @@ int main (void)
  	spi_init();
 
 	rcc_periph_clock_enable(RCC_GPIOD);		//LEDS
-	rcc_periph_clock_enable(RCC_GPIOA);		//center btn
+	rcc_periph_clock_enable(RCC_GPIOA);		//center btn and user btn
 	rcc_periph_clock_enable(RCC_GPIOC);		//other btns
 	rcc_periph_clock_enable(RCC_GPIOE);		//LCD display
 	rcc_periph_clock_enable(RCC_SYSCFG);	//for EXTI interrupts
@@ -87,6 +90,8 @@ int main (void)
 
 	/* configuration successful end */
 	sk_pin_set(sk_io_led_red, false);
+
+
 
 	while (1) {
 

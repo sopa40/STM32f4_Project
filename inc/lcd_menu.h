@@ -9,12 +9,15 @@
 #include <stdint.h>
 
 enum MENU_STATUS {
-	MENU_INIT = 0,
-	ENTER_PASS = 1,
-	WRONG_PASS = 2,
-	SET_PASS = 3,
-	ACCESS_GRANTED = 4,
-	ACCESS_DENIED = 5
+	MENU_INIT,
+	ENTER_PASS,
+	ENTER_MASTER_PASS,
+	WRONG_PASS,
+	SET_PASS,
+	ACCESS_GRANTED,
+	ACCESS_DENIED,
+	MASTER_ACCESS_GRANTED,
+	MASTER_ACCESS_DENIED
 };
 
 struct Menu {
@@ -32,6 +35,8 @@ void init_lcd_with_settings(void);
 
 void print_error(const char *str);
 
+void draw_master_pass_input(void);
+
 void draw_pass_input(void);
 
 void move_cursor_left(void);
@@ -40,6 +45,6 @@ void move_cursor_right(void);
 
 void hide_symbol(void);
 
-void show_symbol(void);
+void show_symbol(bool is_master);
 
 #endif //LCD_MENU_H

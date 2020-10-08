@@ -6,15 +6,12 @@
 
 void init_interrput_vars(void);
 
+void exti0_isr(void);
+
 void exti9_5_isr(void);
 
 void exti15_10_isr(void);
 
-void handle_center_btn(void);
-
-void handle_left_btn(void);
-
-void handle_right_btn(void);
 
 
 

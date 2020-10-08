@@ -20,7 +20,19 @@ void init_interrput_vars(void)
 	lcd_menu = get_lcd_menu();
 }
 
-void handle_center_btn(void)
+static void handle_user_btn(void)
+{
+    draw_master_pass_input();
+    switch(lcd_menu->status) {
+        case MENU_INIT:
+            lcd_menu->status = ENTER_MASTER_PASS;
+            break;
+        default:
+            break;
+    }
+}
+
+static void handle_center_btn(void)
 {
     switch(lcd_menu->status) {
         case MENU_INIT:
@@ -29,12 +41,18 @@ void handle_center_btn(void)
             lcd_menu->status = ENTER_PASS;
             break;
         case ENTER_PASS:
-            if (is_pwd_correct()) {
+            if (is_pwd_correct(0)) {
                 lcd_menu->status = ACCESS_GRANTED;
                 sk_pin_toggle(sk_io_led_orange);
-                print_error("access granted!");
             } else
                 lcd_menu->status = ACCESS_DENIED;
+            break;
+        case ENTER_MASTER_PASS:
+            if (is_pwd_correct(1)) {
+                lcd_menu->status = MASTER_ACCESS_GRANTED;
+                sk_pin_toggle(sk_io_led_blue);
+            } else
+                lcd_menu->status = MASTER_ACCESS_DENIED;
             break;
         default:
             sk_lcd_cmd_clear(lcd);
@@ -43,38 +61,57 @@ void handle_center_btn(void)
     }
 }
 
-void handle_left_btn(void)
+static void handle_left_btn(void)
 {
     switch(lcd_menu->status) {
         case ENTER_PASS:
             hide_symbol();
             move_cursor_left();
-            show_symbol();
+            show_symbol(0);
+            break;
+        case ENTER_MASTER_PASS:
+            hide_symbol();
+            move_cursor_left();
+            show_symbol(1);
             break;
         default:
             break;
     }
 }
 
-void handle_right_btn(void)
+static void handle_right_btn(void)
 {
     switch(lcd_menu->status) {
+        case MENU_INIT:
+            break;
         case ENTER_PASS:
             hide_symbol();
             move_cursor_right();
-            show_symbol();
+            show_symbol(0);
+            break;
+        case ENTER_MASTER_PASS:
+            hide_symbol();
+            move_cursor_right();
+            show_symbol(1);
             break;
         default:
             break;
     }
 }
 
-void handle_top_btn(void)
+static void handle_top_btn(void)
 {
     char new_symb = 255;
     switch(lcd_menu->status) {
         case ENTER_PASS:
-            new_symb = inc_value(lcd_menu->pass_symbol_pos);
+            new_symb = inc_value(lcd_menu->pass_symbol_pos, false);
+            if(255 == new_symb)
+                print_error("false inc symbol");
+            sk_lcd_putchar(lcd, new_symb);
+            sk_lcd_cmd_shift(lcd, false, false);
+            break;
+        case ENTER_MASTER_PASS:
+            new_symb = inc_value(lcd_menu->pass_symbol_pos, true);
             if(255 == new_symb)
                 print_error("false inc symbol");
             sk_lcd_putchar(lcd, new_symb);
@@ -85,12 +122,19 @@ void handle_top_btn(void)
     }sk_pin_toggle(sk_io_led_orange);
 }
 
-void handle_bottom_btn(void)
+static void handle_bottom_btn(void)
 {
     char new_symb = 255;
     switch(lcd_menu->status) {
         case ENTER_PASS:
-            new_symb = dec_value(lcd_menu->pass_symbol_pos);
+            new_symb = dec_value(lcd_menu->pass_symbol_pos, false);
+            if(255 == new_symb)
+                print_error("false dec symbol");
+            sk_lcd_putchar(lcd, new_symb);
+            sk_lcd_cmd_shift(lcd, false, false);
+            break;
+        case ENTER_MASTER_PASS:
+            new_symb = dec_value(lcd_menu->pass_symbol_pos, true);
             if(255 == new_symb)
                 print_error("false dec symbol");
             sk_lcd_putchar(lcd, new_symb);
@@ -102,6 +146,14 @@ void handle_bottom_btn(void)
 }
 
 //TODO: debounce buttons
+
+void exti0_isr(void)
+{
+    printf("test\n");
+    handle_user_btn();
+    exti_reset_request(EXTI0);
+}
+
 //PC6 top
 //PC8 bottom
 //PC9 left

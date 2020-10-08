@@ -6,24 +6,27 @@
 
 //TODO: add pass len setting in master menu
 #define PASS_LEN 6
+#define MASTER_PASS_LEN 4
 
 struct Password {
 	uint8_t pass_len;
-	volatile uint8_t values[PASS_LEN];
+	uint8_t values[PASS_LEN];
 	bool is_set;
 };
 
-struct Password *get_password(void);
+void init_pwd_settings(void);
 
-char get_pass_symbol (uint8_t position);
+char get_pass_symbol (uint8_t position, bool is_master);
 
 uint8_t get_pass_len(void);
 
-char inc_value(uint8_t position);
+char inc_value(uint8_t position, bool is_master);
 
-char dec_value(uint8_t position);
+char dec_value(uint8_t position, bool is_master);
 
-bool is_pwd_correct(void);
+bool is_pwd_correct(bool is_master);
+
+bool is_master_pwd_set(void);
 
 
 #endif // PASSWORD_H

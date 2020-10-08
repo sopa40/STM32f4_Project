@@ -175,7 +175,6 @@ void flash_rx(uint32_t len, const void *data)
 	}
 }
 
-
 uint8_t get_status_register(void)
 {
 		uint8_t result_status = 0;
@@ -285,6 +284,15 @@ void flash_erase_full(void)
     cs_set(0);
     flash_tx(1, &cmd_erase_full);
     cs_set(1);
+}
+
+uint32_t find_free_addr(uint32_t start_addr, uint32_t end_addr)
+{
+	for(uint32_t i = start_addr; i <= end_addr; i++) {
+		if(255 == flash_read_byte(i))
+			return i;
+	}
+	return 0x1FFFFF;
 }
 
 // void flash_test(void)

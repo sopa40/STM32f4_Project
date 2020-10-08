@@ -70,6 +70,18 @@ void print_error(const char *str)
     return_cursor_back();
 }
 
+void draw_master_pass_input(void)
+{
+    sk_lcd_cmd_clear(lcd);
+    //TODO: refactor. Now drawing is simple brute force
+    lcd_putstring(lcd, "      ****       ");
+    lcd_menu.position = 6;
+    lcd_menu.row = 0;
+    lcd_menu.pass_symbol_pos = 0;
+    return_cursor_back();
+    show_symbol(true);
+}
+
 void draw_pass_input(void)
 {
     sk_lcd_cmd_clear(lcd);
@@ -79,7 +91,7 @@ void draw_pass_input(void)
     lcd_menu.row = 0;
     lcd_menu.pass_symbol_pos = 0;
     return_cursor_back();
-    show_symbol();
+    show_symbol(false);
 }
 
 void move_cursor_left(void)
@@ -114,9 +126,9 @@ void hide_symbol(void)
     sk_lcd_cmd_shift(lcd, false, false);
 }
 
-void show_symbol(void)
+void show_symbol(bool is_master)
 {
-    char symbol = get_pass_symbol(lcd_menu.pass_symbol_pos);
+    char symbol = get_pass_symbol(lcd_menu.pass_symbol_pos, is_master);
     if(255 != symbol) {
         sk_lcd_putchar(lcd, symbol);
         sk_lcd_cmd_shift(lcd, false, false);
