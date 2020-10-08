@@ -146,7 +146,7 @@ static void handle_bottom_btn(void)
 }
 
 //TODO: debounce buttons
-
+//PA0 user
 void exti0_isr(void)
 {
     printf("test\n");

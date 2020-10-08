@@ -10,7 +10,7 @@
 
 struct Password {
 	uint8_t pass_len;
-	uint8_t values[PASS_LEN];
+	uint8_t val[PASS_LEN];
 	bool is_set;
 };
 
@@ -20,9 +20,9 @@ char get_pass_symbol (uint8_t position, bool is_master);
 
 uint8_t get_pass_len(void);
 
-char inc_value(uint8_t position, bool is_master);
+char inc_value(uint8_t pos, bool is_master);
 
-char dec_value(uint8_t position, bool is_master);
+char dec_value(uint8_t pos, bool is_master);
 
 bool is_pwd_correct(bool is_master);
 

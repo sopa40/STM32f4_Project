@@ -22,7 +22,7 @@ enum MENU_STATUS {
 
 struct Menu {
 	enum MENU_STATUS status;
-	uint8_t position;
+	uint8_t pos;
 	bool row;
 	uint8_t pass_symbol_pos;
 };

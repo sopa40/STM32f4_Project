@@ -8,9 +8,6 @@
 
 //TODO: add pass length setting in master menu
 #define MAX_DISPLAY_LENGTH 16
-#define PASS_LEN 6
-
-const uint8_t pass_len = 6;
 
 static struct sk_lcd *lcd = NULL;
 
@@ -33,7 +30,7 @@ void init_menu_vars(void)
 
 static struct Menu lcd_menu = {
 	.status = MENU_INIT,
-	.position = 0,
+	.pos = 0,
 	.row = 0,
     .pass_symbol_pos = 10   //invalid value
 };
@@ -50,7 +47,7 @@ static void return_cursor_back(void)
     else
         sk_lcd_cmd_setaddr(lcd, 0x40, false);
 
-    for(int i = 0; i < lcd_menu.position; i++)
+    for(int i = 0; i < lcd_menu.pos; i++)
         sk_lcd_cmd_shift(lcd, false, true);
 }
 
@@ -75,7 +72,7 @@ void draw_master_pass_input(void)
     sk_lcd_cmd_clear(lcd);
     //TODO: refactor. Now drawing is simple brute force
     lcd_putstring(lcd, "      ****       ");
-    lcd_menu.position = 6;
+    lcd_menu.pos = 6;
     lcd_menu.row = 0;
     lcd_menu.pass_symbol_pos = 0;
     return_cursor_back();
@@ -87,7 +84,7 @@ void draw_pass_input(void)
     sk_lcd_cmd_clear(lcd);
     //TODO: refactor. Now drawing is simple brute force
     lcd_putstring(lcd, "     ******      ");
-    lcd_menu.position = 5;
+    lcd_menu.pos = 5;
     lcd_menu.row = 0;
     lcd_menu.pass_symbol_pos = 0;
     return_cursor_back();
@@ -97,7 +94,7 @@ void draw_pass_input(void)
 void move_cursor_left(void)
 {
     if(0 != lcd_menu.pass_symbol_pos) {
-        lcd_menu.position--;
+        lcd_menu.pos--;
         lcd_menu.pass_symbol_pos--;
         sk_lcd_cmd_shift(lcd, false, false);
     } else {
@@ -110,7 +107,7 @@ void move_cursor_left(void)
 void move_cursor_right(void)
 {
     if(get_pass_len() - 1 != lcd_menu.pass_symbol_pos) {
-        lcd_menu.position++;
+        lcd_menu.pos++;
         lcd_menu.pass_symbol_pos++;
         sk_lcd_cmd_shift(lcd, false, true);
     } else {
