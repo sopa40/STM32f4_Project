@@ -3,6 +3,7 @@
 
 #include "lcd_hd44780.h"
 #include "tick.h"
+#include "password.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -20,6 +21,7 @@ struct Menu {
 	enum MENU_STATUS status;
 	uint8_t position;
 	bool row;
+	uint8_t pass_symbol_pos;
 };
 
 struct Menu *get_lcd_menu (void);
@@ -35,6 +37,8 @@ void draw_pass_input(void);
 void move_cursor_left(void);
 
 void move_cursor_right(void);
+
+void hide_symbol(void);
 
 void show_symbol(void);
 

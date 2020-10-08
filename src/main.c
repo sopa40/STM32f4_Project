@@ -2,6 +2,7 @@
 #include "interrupts.h"
 #include "tick.h"
 #include "spi.h"
+#include "password.h"
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
