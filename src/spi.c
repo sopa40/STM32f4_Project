@@ -207,10 +207,12 @@ void write_disable(void)
 void flash_unlock(void)
 {
     uint8_t reg = 0x00;
+	write_enable();
     cs_set(0);
     flash_tx(1, &cmd_write_status_register);
     flash_tx(1, &reg);
     cs_set(1);
+	write_disable();
 }
 
 void flash_lock(void)
@@ -232,14 +234,14 @@ bool is_busy(void)
     return status_register & BUSY_BIT;
 }
 
-// Displaying status register in decimal format
-void flash_show_status_reg(void)
+uint8_t flash_show_status_reg(void)
 {
 	uint8_t reg = 0;
     cs_set(0);
     flash_tx(1, &cmd_read_status_reg);
     flash_rx(1, &reg);
     cs_set(1);
+	return reg;
 }
 
 
@@ -255,9 +257,10 @@ static void send_addr(uint32_t addr)
 
 void flash_write_byte(uint32_t addr, uint8_t data)
 {
-    while(is_busy());
+	if (data == 255)
+		printf("oh shit\n");
+    while (is_busy());
 	write_enable();
-	flash_show_status_reg();
     cs_set(0);
     flash_tx(1, &cmd_write_byte);
 	send_addr(addr);
@@ -281,19 +284,25 @@ uint8_t flash_read_byte(uint32_t addr)
 void flash_erase_full(void)
 {
     while(is_busy());
+	write_enable();
     cs_set(0);
     flash_tx(1, &cmd_erase_full);
     cs_set(1);
+	write_disable();
 }
 
 uint32_t find_free_addr(uint32_t start_addr, uint32_t end_addr)
 {
-	for(uint32_t i = start_addr; i <= end_addr; i++) {
-		if(255 == flash_read_byte(i))
+	uint8_t read_data;
+	for (uint32_t i = start_addr; i <= end_addr; i++) {
+		read_data = flash_read_byte(i);
+		if(read_data == 255)
 			return i;
 	}
 	return 0x1FFFFF;
 }
+
+
 
 // void flash_test(void)
 // {

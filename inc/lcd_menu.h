@@ -24,7 +24,7 @@ struct Menu {
 	enum MENU_STATUS status;
 	uint8_t pos;
 	bool row;
-	uint8_t pass_symbol_pos;
+	uint8_t pwd_pos;
 };
 
 struct Menu *get_lcd_menu (void);
@@ -43,8 +43,8 @@ void move_cursor_left(void);
 
 void move_cursor_right(void);
 
-void hide_symbol(void);
+void hide_sym(void);
 
-void show_symbol(bool is_master);
+void show_sym(bool is_master);
 
 #endif //LCD_MENU_H

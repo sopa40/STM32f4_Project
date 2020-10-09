@@ -22,12 +22,12 @@ void init_interrput_vars(void)
 
 static void handle_user_btn(void)
 {
-    draw_master_pass_input();
     switch(lcd_menu->status) {
-        case MENU_INIT:
-            lcd_menu->status = ENTER_MASTER_PASS;
+        case ENTER_MASTER_PASS:
             break;
         default:
+            draw_master_pwd_input();
+            lcd_menu->status = ENTER_MASTER_PASS;
             break;
     }
 }
@@ -36,7 +36,7 @@ static void handle_center_btn(void)
 {
     switch(lcd_menu->status) {
         case MENU_INIT:
-            draw_pass_input();
+            draw_pwd_input();
             sk_lcd_cmd_onoffctl(lcd, true, true, false);
             lcd_menu->status = ENTER_PASS;
             break;
@@ -65,14 +65,14 @@ static void handle_left_btn(void)
 {
     switch(lcd_menu->status) {
         case ENTER_PASS:
-            hide_symbol();
+            hide_sym();
             move_cursor_left();
-            show_symbol(0);
+            show_sym(0);
             break;
         case ENTER_MASTER_PASS:
-            hide_symbol();
+            hide_sym();
             move_cursor_left();
-            show_symbol(1);
+            show_sym(1);
             break;
         default:
             break;
@@ -85,14 +85,14 @@ static void handle_right_btn(void)
         case MENU_INIT:
             break;
         case ENTER_PASS:
-            hide_symbol();
+            hide_sym();
             move_cursor_right();
-            show_symbol(0);
+            show_sym(0);
             break;
         case ENTER_MASTER_PASS:
-            hide_symbol();
+            hide_sym();
             move_cursor_right();
-            show_symbol(1);
+            show_sym(1);
             break;
         default:
             break;
@@ -104,14 +104,14 @@ static void handle_top_btn(void)
     char new_symb = 255;
     switch(lcd_menu->status) {
         case ENTER_PASS:
-            new_symb = inc_value(lcd_menu->pass_symbol_pos, false);
+            new_symb = inc_value(lcd_menu->pwd_pos, false);
             if(255 == new_symb)
                 print_error("false inc symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
             break;
         case ENTER_MASTER_PASS:
-            new_symb = inc_value(lcd_menu->pass_symbol_pos, true);
+            new_symb = inc_value(lcd_menu->pwd_pos, true);
             if(255 == new_symb)
                 print_error("false inc symbol");
             sk_lcd_putchar(lcd, new_symb);
@@ -127,14 +127,14 @@ static void handle_bottom_btn(void)
     char new_symb = 255;
     switch(lcd_menu->status) {
         case ENTER_PASS:
-            new_symb = dec_value(lcd_menu->pass_symbol_pos, false);
+            new_symb = dec_value(lcd_menu->pwd_pos, false);
             if(255 == new_symb)
                 print_error("false dec symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
             break;
         case ENTER_MASTER_PASS:
-            new_symb = dec_value(lcd_menu->pass_symbol_pos, true);
+            new_symb = dec_value(lcd_menu->pwd_pos, true);
             if(255 == new_symb)
                 print_error("false dec symbol");
             sk_lcd_putchar(lcd, new_symb);
@@ -149,7 +149,6 @@ static void handle_bottom_btn(void)
 //PA0 user
 void exti0_isr(void)
 {
-    printf("test\n");
     handle_user_btn();
     exti_reset_request(EXTI0);
 }

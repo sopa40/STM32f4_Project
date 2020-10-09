@@ -23,8 +23,6 @@
 static struct sk_lcd *lcd = NULL;
 static struct Menu *lcd_menu = NULL;
 
-
-
 void init_variables(void)
 {
 	lcd = get_lcd();
@@ -88,6 +86,9 @@ int main (void)
 
 	init_lcd_with_settings();
 
+	init_pwd_settings();
+
+	get_pwd();
 	/* configuration successful end */
 	sk_pin_set(sk_io_led_red, false);
 

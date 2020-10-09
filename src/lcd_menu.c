@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 
-//TODO: add pass length setting in master menu
+//TODO: add pwd length setting in master menu
 #define MAX_DISPLAY_LENGTH 16
 
 static struct sk_lcd *lcd = NULL;
@@ -20,7 +20,7 @@ void init_lcd_with_settings(void)
 	sk_lcd_cmd_setaddr(lcd, 0x00, false);
 	lcd_putstring(lcd, "   Press OK");
 	sk_lcd_cmd_setaddr(lcd, 0x40, false);
-	lcd_putstring(lcd, " To enter pass");
+	lcd_putstring(lcd, " To enter pwd");
 }
 
 void init_menu_vars(void)
@@ -32,7 +32,7 @@ static struct Menu lcd_menu = {
 	.status = MENU_INIT,
 	.pos = 0,
 	.row = 0,
-    .pass_symbol_pos = 10   //invalid value
+    .pwd_pos = 10   //invalid value
 };
 
 struct Menu *get_lcd_menu(void)
@@ -67,35 +67,35 @@ void print_error(const char *str)
     return_cursor_back();
 }
 
-void draw_master_pass_input(void)
+void draw_master_pwd_input(void)
 {
     sk_lcd_cmd_clear(lcd);
     //TODO: refactor. Now drawing is simple brute force
     lcd_putstring(lcd, "      ****       ");
     lcd_menu.pos = 6;
     lcd_menu.row = 0;
-    lcd_menu.pass_symbol_pos = 0;
+    lcd_menu.pwd_pos = 0;
     return_cursor_back();
-    show_symbol(true);
+    show_sym(true);
 }
 
-void draw_pass_input(void)
+void draw_pwd_input(void)
 {
     sk_lcd_cmd_clear(lcd);
     //TODO: refactor. Now drawing is simple brute force
     lcd_putstring(lcd, "     ******      ");
     lcd_menu.pos = 5;
     lcd_menu.row = 0;
-    lcd_menu.pass_symbol_pos = 0;
+    lcd_menu.pwd_pos = 0;
     return_cursor_back();
-    show_symbol(false);
+    show_sym(false);
 }
 
 void move_cursor_left(void)
 {
-    if(0 != lcd_menu.pass_symbol_pos) {
+    if(0 != lcd_menu.pwd_pos) {
         lcd_menu.pos--;
-        lcd_menu.pass_symbol_pos--;
+        lcd_menu.pwd_pos--;
         sk_lcd_cmd_shift(lcd, false, false);
     } else {
         print_error("can't move left!");
@@ -106,9 +106,9 @@ void move_cursor_left(void)
 
 void move_cursor_right(void)
 {
-    if(get_pass_len() - 1 != lcd_menu.pass_symbol_pos) {
+    if(get_pwd_len() - 1 != lcd_menu.pwd_pos) {
         lcd_menu.pos++;
-        lcd_menu.pass_symbol_pos++;
+        lcd_menu.pwd_pos++;
         sk_lcd_cmd_shift(lcd, false, true);
     } else {
         print_error("can't move right!");
@@ -117,15 +117,15 @@ void move_cursor_right(void)
     }
 }
 
-void hide_symbol(void)
+void hide_sym(void)
 {
     sk_lcd_putchar(lcd, '*');
     sk_lcd_cmd_shift(lcd, false, false);
 }
 
-void show_symbol(bool is_master)
+void show_sym(bool is_master)
 {
-    char symbol = get_pass_symbol(lcd_menu.pass_symbol_pos, is_master);
+    char symbol = get_pwd_sym(lcd_menu.pwd_pos, is_master);
     if(255 != symbol) {
         sk_lcd_putchar(lcd, symbol);
         sk_lcd_cmd_shift(lcd, false, false);

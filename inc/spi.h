@@ -9,12 +9,25 @@
 #define ADDR_MASTER_PASS_LEN ONE_ADDR * MASTER_PASS_LEN
 #define ADDR_PASS_LEN ONE_ADDR * PASS_LEN
 
-//4kbytes for master_password.is_set
-#define FIRST_ADDR_MS_PWD 0x1F7FFF
-#define LAST_ADDR_MS_PWD 0x1FFFFF - 0x000001
+//4kbytes for m_pwd.is_set
+#define FIRST_ADDR_MS_PWD_IS_SET 0x1F7FFF
+#define LAST_ADDR_MS_PWD_IS_SET 0x1FFFFF - ONE_ADDR
 
-#define FIRST_ADDR_PWD 0x1F00000
-#define LAST_ADDR_PWD 0x1F7FFF - 0x000001
+//4kbytes for pwd.is_set
+#define FIRST_ADDR_PWD_IS_SET 0x1F0000
+#define LAST_ADDR_PWD_IS_SET 0x1F7FFF - ONE_ADDR
+
+//64kbytes for m_pwd.val
+#define FIRST_ADDR_MS_PWD 0x170000
+#define LAST_ADDR_MS_PWD 0x1F0000 - ONE_ADDR
+
+//64kbytes for pwd.val
+#define FIRST_ADDR_PWD 0x0F0000
+#define LAST_ADDR_PWD 0x170000 - ONE_ADDR
+
+//4kbytes for default master pass
+#define FIRST_ADDR_DEFAULT_M_PWD 0x0E8000
+#define LAST_ADDR_DEFAULT_M_PWD 0x0F0000 - ONE_ADDR
 
 
 void spi_init(void);
@@ -37,7 +50,7 @@ void flash_lock(void);
 
 bool is_busy(void);
 
-void flash_show_status_reg(void);
+uint8_t flash_show_status_reg(void);
 
 void flash_write_byte(uint32_t addr, uint8_t data);
 
