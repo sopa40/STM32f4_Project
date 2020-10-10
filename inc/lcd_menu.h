@@ -17,7 +17,10 @@ enum MENU_STATUS {
 	ACCESS_GRANTED,
 	ACCESS_DENIED,
 	MASTER_ACCESS_GRANTED,
-	MASTER_ACCESS_DENIED
+	MASTER_ACCESS_DENIED,
+	CHANGE_PWD,
+	PWD_CHANGED,
+	OPTIONS1
 };
 
 struct Menu {
@@ -35,9 +38,9 @@ void init_lcd_with_settings(void);
 
 void print_error(const char *str);
 
-void draw_master_pass_input(void);
+void draw_pwd_input(bool is_master);
 
-void draw_pass_input(void);
+void print_options(void);
 
 void move_cursor_left(void);
 

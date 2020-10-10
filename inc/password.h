@@ -1,6 +1,8 @@
 #ifndef PASSWORD_H
 #define PASSWORD_H
 
+#include "lcd_menu.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -21,6 +23,8 @@ struct New_Password {
 	uint8_t val[PASS_LEN];
 };
 
+void clear_pwd_input(bool is_master);
+
 void init_pwd_settings(void);
 
 char get_pwd_sym(uint8_t position, bool is_master);
@@ -34,6 +38,10 @@ char dec_value(uint8_t pos, bool is_master);
 bool is_pwd_correct(bool is_master);
 
 bool is_master_pwd_set(void);
+
+void save_pwd(bool is_master);
+
+void change_pwd(bool is_master);
 
 void get_m_pwd(void);
 

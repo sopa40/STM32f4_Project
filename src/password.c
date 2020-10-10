@@ -38,6 +38,15 @@ bool is_init(bool is_master)
     return false;
 }
 
+void clear_pwd_input(bool is_master)
+{
+    uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
+    uint8_t *p = is_master ? new_pwd.val : pwd.val;
+    for (uint8_t i = 0; i < len; i++)
+        p[i] = '0';
+
+}
+
 static uint32_t _get_pwd_start_addr(uint32_t start_addr, uint32_t end_addr, uint8_t pwd_len)
 {
     uint32_t addr = find_free_addr(start_addr, end_addr);
@@ -172,6 +181,21 @@ bool is_pwd_correct(bool is_master)
     }
 
     return true;
+}
+
+void save_pwd(bool is_master)
+{
+    uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
+    uint8_t *p = is_master ? new_m_pwd.val : new_pwd.val;
+    uint32_t start_addr = is_master ? FIRST_ADDR_MS_PWD_IS_SET : FIRST_ADDR_PWD_IS_SET;
+    uint32_t end_addr = is_master ? LAST_ADDR_MS_PWD_IS_SET : LAST_ADDR_PWD_IS_SET;
+
+}
+
+void change_pwd(bool is_master)
+{
+    uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
+    draw_pwd_input();
 }
 
 void get_m_pwd(void)

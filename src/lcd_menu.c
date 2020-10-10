@@ -67,28 +67,30 @@ void print_error(const char *str)
     return_cursor_back();
 }
 
-void draw_master_pwd_input(void)
+void draw_pwd_input(bool is_master)
 {
     sk_lcd_cmd_clear(lcd);
-    //TODO: refactor. Now drawing is simple brute force
-    lcd_putstring(lcd, "      ****       ");
-    lcd_menu.pos = 6;
+    if (is_master) {
+        //TODO: refactor. Now drawing is simple brute force
+        lcd_putstring(lcd, "      ****       ");
+        lcd_menu.pos = 6;
+        show_sym(true);
+    } else {
+        lcd_putstring(lcd, "     ******      ");
+        lcd_menu.pos = 5;
+        show_sym(false);
+    }
     lcd_menu.row = 0;
     lcd_menu.pwd_pos = 0;
     return_cursor_back();
-    show_sym(true);
 }
 
-void draw_pwd_input(void)
+void print_options(void)
 {
     sk_lcd_cmd_clear(lcd);
-    //TODO: refactor. Now drawing is simple brute force
-    lcd_putstring(lcd, "     ******      ");
-    lcd_menu.pos = 5;
-    lcd_menu.row = 0;
-    lcd_menu.pwd_pos = 0;
-    return_cursor_back();
-    show_sym(false);
+    lcd_putstring(lcd, " Change pwd");
+    sk_lcd_cmd_setaddr(lcd, 0x40, false);
+    lcd_putstring(lcd, " Exit");
 }
 
 void move_cursor_left(void)

@@ -26,7 +26,8 @@ static void handle_user_btn(void)
         case ENTER_MASTER_PASS:
             break;
         default:
-            draw_master_pwd_input();
+            clear_pwd_input(true);
+            draw_pwd_input(true);
             lcd_menu->status = ENTER_MASTER_PASS;
             break;
     }
@@ -36,13 +37,16 @@ static void handle_center_btn(void)
 {
     switch(lcd_menu->status) {
         case MENU_INIT:
-            draw_pwd_input();
+            clear_pwd_input(false);
+            draw_pwd_input(false);
             sk_lcd_cmd_onoffctl(lcd, true, true, false);
             lcd_menu->status = ENTER_PASS;
             break;
         case ENTER_PASS:
             if (is_pwd_correct(0)) {
                 lcd_menu->status = ACCESS_GRANTED;
+                sk_lcd_cmd_clear(lcd);
+                print_error("It is open");
                 sk_pin_toggle(sk_io_led_orange);
             } else
                 lcd_menu->status = ACCESS_DENIED;
@@ -50,10 +54,33 @@ static void handle_center_btn(void)
         case ENTER_MASTER_PASS:
             if (is_pwd_correct(1)) {
                 lcd_menu->status = MASTER_ACCESS_GRANTED;
-                sk_pin_toggle(sk_io_led_blue);
-            } else
+                sk_lcd_cmd_clear(lcd);
+                lcd_putstring(lcd, "WELCOME TO MENU");
+                sk_tick_delay_ms(1500);
+                lcd_menu->status = OPTIONS1;
+                print_options();
+            } else {
                 lcd_menu->status = MASTER_ACCESS_DENIED;
+                print_error("false master pwd");
+            }
             break;
+        case CHANGE_PWD:
+            //here correct means same pwd input
+            if (!is_pwd_correct(0)) {
+                save_pwd(0);
+            }
+            else {
+                print_error("Same pwd, change");
+            }
+            break;
+        case OPTIONS1:
+            if (!lcd_menu->row) {
+                lcd_menu->state = CHANGE_PWD;
+                draw_pwd_input(false);
+            }
+            else {
+                //handle second option
+            }
         default:
             sk_lcd_cmd_clear(lcd);
             lcd_putstring(lcd, "some error");
@@ -139,6 +166,16 @@ static void handle_bottom_btn(void)
                 print_error("false dec symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
+            break;
+        case OPTIONS1:
+            if(!lcd_menu->row) {
+                lcd_menu->row = 1;
+                //go to second option
+            } else {
+                lcd_menu->status = OPTIONS2;
+                lcd_menu->row = 0;
+                //go to next option list
+            }
             break;
         default:
             break;
