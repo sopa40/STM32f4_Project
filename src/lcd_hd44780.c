@@ -361,16 +361,16 @@ uint8_t sk_lcd_charmap_rus_cp1251(const char c)
 		case 'б': return 0xB2;
 		case 'в': return 0xB3;
 		case 'г': return 0xB4;
-		case 'ґ': return 0xB4;		// bad sym
+		case 'ґ': return 0x02;		// added in CGRAM 2. Arrow immitation
 		case 'д': return 0xE3;
 		case 'е': return 'e';
-		case 'є': return 'e';		// bad sym
+		case 'є': return 0x01;		// added in CGRAM 1
 		case 'ё': return 0xB5;
 		case 'ж': return 0xB6;
 		case 'з': return 0xB7;
 		case 'и': return 0xB8;
 		case 'і': return 'i';
-		case 'ї': return 'i';		// bad sym
+		case 'ї': return 0x00;		// added in CGRAM 0
 		case 'й': return 0xB9;
 		case 'к': return 0xBA;
 		case 'л': return 0xBB;

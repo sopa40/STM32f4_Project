@@ -1,5 +1,7 @@
 #include "pin.h"
 #include "tick.h"
+#include "lcd_menu.h"
+#include "spi.h"
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
@@ -19,10 +21,10 @@ const uint8_t cmd_jedec_id_get = 0x9F;
 const uint8_t cmd_write_enable = 0x06;
 const uint8_t cmd_write_disable = 0x04;
 const uint8_t cmd_write_byte = 0x02;
-const uint8_t cmd_erase_full = 0xC7;
-const uint8_t cmd_erase_64kb = 0xD8;
-const uint8_t cmd_erase_32kb = 0x52;
 const uint8_t cmd_erase_4kb = 0x20;
+const uint8_t cmd_erase_32kb = 0x52;
+const uint8_t cmd_erase_64kb = 0xD8;
+const uint8_t cmd_erase_full = 0xC7;
 const uint8_t cmd_read_status_reg = 0x05;
 const uint8_t cmd_read = 0x03;
 const uint8_t cmd_write_status_register = 0x01;
@@ -115,8 +117,7 @@ void spi_init(void)
 	spi_set_full_duplex_mode(SPI1);
 	// Data frame format is 8 bit, not 16
 	spi_set_dff_8bit(SPI1);
-	// No CRC calculation is required
-	spi_disable_crc(SPI1);
+	spi_enable_crc(SPI1);
 	// Our flash chip requires Most Significant Bit first (datasheet p. 5, Figure 3. SPI Protocol)
 	spi_send_msb_first(SPI1);
 	// Flash chip can work in Mode 0 (polarity 0, phase 0) and Mode 3 (polarity 1, phase 1)
@@ -153,7 +154,6 @@ void flash_tx(uint32_t len, const void *data)
 		spi_read(SPI1);		// dummy read to provide delay
 	}
 }
-
 
 void flash_rx(uint32_t len, const void *data)
 {
@@ -244,7 +244,6 @@ uint8_t flash_show_status_reg(void)
 	return reg;
 }
 
-
 static void send_addr(uint32_t addr)
 {
 	uint8_t addr_part = (uint8_t) (addr >> 16);
@@ -257,8 +256,9 @@ static void send_addr(uint32_t addr)
 
 void flash_write_byte(uint32_t addr, uint8_t data)
 {
-	if (data == 255)
-		printf("oh shit\n");
+	if (data == 255) {
+		//printf("Writing 255 in memory. Error\n");
+	}
     while (is_busy());
 	write_enable();
     cs_set(0);
@@ -271,6 +271,7 @@ void flash_write_byte(uint32_t addr, uint8_t data)
 
 uint8_t flash_read_byte(uint32_t addr)
 {
+	flash_unlock();
 	uint8_t data_read;
     while(is_busy());
     cs_set(0);
@@ -279,18 +280,102 @@ uint8_t flash_read_byte(uint32_t addr)
     flash_rx(1, &data_read);
     cs_set(1);
     return data_read;
+	flash_lock();
+}
+
+void flash_erase_4kb(uint32_t start_addr)
+{
+	flash_unlock();
+	while(is_busy());
+	write_enable();
+    cs_set(0);
+    flash_tx(1, &cmd_erase_4kb);
+	send_addr(start_addr);
+    cs_set(1);
+	write_disable();
+	flash_lock();
+}
+
+void flash_erase_32kb(uint32_t start_addr)
+{
+	flash_unlock();
+	while(is_busy());
+	write_enable();
+    cs_set(0);
+    flash_tx(1, &cmd_erase_32kb);
+	send_addr(start_addr);
+    cs_set(1);
+	write_disable();
+	flash_lock();
+}
+
+void flash_erase_64kb(uint32_t start_addr)
+{
+	flash_unlock();
+	while(is_busy());
+	write_enable();
+    cs_set(0);
+    flash_tx(1, &cmd_erase_64kb);
+	send_addr(start_addr);
+    cs_set(1);
+	write_disable();
+	flash_lock();
 }
 
 void flash_erase_full(void)
 {
+	flash_unlock();
     while(is_busy());
 	write_enable();
     cs_set(0);
     flash_tx(1, &cmd_erase_full);
     cs_set(1);
 	write_disable();
+	flash_lock();
 }
 
+void clear_page(uint32_t start_addr, uint32_t end_addr)
+{
+	uint32_t len = end_addr - start_addr + 1;
+	//saving last n data from sector
+	uint8_t saved_val[DATA_TO_SAVE];
+	for (uint8_t i = 1; i <= DATA_TO_SAVE; i++) {
+		saved_val[i - 1] = flash_read_byte(end_addr - DATA_TO_SAVE + i);
+	}
+
+	switch (len) {
+		/* 4kb */
+		case 0x008000:
+			flash_erase_4kb(start_addr);
+			break;
+		/* 32kb */
+		case 0x040000:
+			flash_erase_32kb(start_addr);
+			break;
+		/* 64kb */
+		case 0x080000:
+			flash_erase_64kb(start_addr);
+			break;
+		/* full memory erase */
+		case 0x1FFFFF:
+			if (start_addr == 0x000000)
+				flash_erase_full();
+			else
+				print_error("bad seg to clear");
+			break;
+		default:
+			print_error("bad seg to clear");
+			break;
+		}
+		flash_unlock();
+		for (uint8_t i = 0; i < DATA_TO_SAVE; i++) {
+			flash_write_byte(start_addr + i, saved_val[i]);
+		}
+		flash_lock();
+}
+
+//TODO: fix bug: while searching for the last written data
+// 		getting error if the last address cell is valid.
 uint32_t find_free_addr(uint32_t start_addr, uint32_t end_addr)
 {
 	uint8_t read_data;
@@ -301,20 +386,3 @@ uint32_t find_free_addr(uint32_t start_addr, uint32_t end_addr)
 	}
 	return 0x1FFFFF;
 }
-
-
-
-// void flash_test(void)
-// {
-// 	write_enable();
-// 	flash_erase_full();
-// 	write_enable();
-// 	uint32_t addr0 = 0x000000;
-//     flash_write_byte(addr0, 0xFF);
-//     uint8_t test_byte = flash_read_byte(addr0);
-//
-//     char buffer[20];
-//     sk_lcd_cmd_setaddr(lcd, 0x00, false);
-//     snprintf(buffer, sizeof(buffer), "test: %Xh", test_byte);
-//     lcd_putstring(lcd, buffer);
-// }

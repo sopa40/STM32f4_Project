@@ -1,12 +1,13 @@
 #include "password.h"
-#include "spi.h"
-#include "lcd_menu.h"
+
+
 
 #include <stdio.h>
 
 static struct Password m_pwd = {
     .pwd_len = MASTER_PASS_LEN,
     .val = {255, 255, 255, 255},
+    .attempts = 0,
     .is_set = false,
     .is_init = false
 };
@@ -14,6 +15,7 @@ static struct Password m_pwd = {
 static struct Password pwd = {
     .pwd_len = PASS_LEN,
     .val = {255, 255, 255, 255, 255, 255},
+    .attempts = 0,
     .is_set = false,
     .is_init = false
 };
@@ -41,21 +43,9 @@ bool is_init(bool is_master)
 void clear_pwd_input(bool is_master)
 {
     uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
-    uint8_t *p = is_master ? new_pwd.val : pwd.val;
+    uint8_t *p = is_master ? new_m_pwd.val : new_pwd.val;
     for (uint8_t i = 0; i < len; i++)
         p[i] = '0';
-
-}
-
-static uint32_t _get_pwd_start_addr(uint32_t start_addr, uint32_t end_addr, uint8_t pwd_len)
-{
-    uint32_t addr = find_free_addr(start_addr, end_addr);
-    printf("first free addr is %lu\n", addr);
-    if(start_addr == addr || NOT_AVAILABLE_ADDR == addr)
-        return NOT_AVAILABLE_ADDR;
-    if(addr - pwd_len < start_addr)
-        return NOT_AVAILABLE_ADDR;
-    return addr - pwd_len;
 }
 
 static void _load_default_m_pwd(void)
@@ -64,7 +54,6 @@ static void _load_default_m_pwd(void)
     for (uint8_t i = 0; i < MASTER_PASS_LEN; i++) {
         m_pwd.val[i] = flash_read_byte(start_addr + i);
         if (m_pwd.val[i] == 255) {
-            printf("fuck\n");
             print_error("FATAL ERROR!\n");
         }
     }
@@ -73,42 +62,60 @@ static void _load_default_m_pwd(void)
 
 static void _load_pwd(bool is_master)
 {
-    printf("in _load_pwd\n");
     uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
     struct Password *p = is_master ? &m_pwd : &pwd;
     uint32_t start_addr = is_master ? FIRST_ADDR_MS_PWD : FIRST_ADDR_PWD;
     uint32_t end_addr = is_master ? LAST_ADDR_MS_PWD : LAST_ADDR_PWD;
     uint32_t pwd_start = find_free_addr(start_addr, end_addr) - len;
-    printf("pwd start is %lu\n", pwd_start);
     if (pwd_start < start_addr || pwd_start + len == NOT_AVAILABLE_ADDR) {
-        printf("FUCK");
         print_error("fatal error");
+    } else {
+        for (uint8_t i = 0; i < len; i++) {
+            p->val[i] = flash_read_byte(pwd_start + i);
+        }
+        p->is_init = 1;
     }
-    for (uint8_t i = 0; i < len; i++) {
-        p->val[i] = flash_read_byte(pwd_start + i);
-    }
-    p->is_init = 1;
 }
 
+//TODO: if is set - 0; not 0 and not 255 - corrupted memory
 static bool _is_pwd_set(bool is_master)
 {
-    uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
     uint32_t start_addr = is_master ? FIRST_ADDR_MS_PWD_IS_SET : FIRST_ADDR_PWD_IS_SET;
     uint32_t end_addr = is_master ? LAST_ADDR_MS_PWD_IS_SET : LAST_ADDR_PWD_IS_SET;
     uint32_t free_addr = find_free_addr(start_addr, end_addr);
-    printf("free addr is %lu\n", free_addr);
     if (free_addr == NOT_AVAILABLE_ADDR || free_addr == start_addr)
         return false;
     return true;
 }
 
-void init_pwd_settings(void)
+//TODO: fix bug with last addr, it wont be overwritten. Just error case
+void _set_attempts(bool is_master)
+{
+    struct Password *p = is_master ? &m_pwd : &pwd;
+    uint32_t start_addr = is_master ? FIRST_ADDR_M_ATTEMPTS : FIRST_ADDR_ATTEMPTS;
+    uint32_t end_addr = is_master ? LAST_ADDR_M_ATTEMPTS : LAST_ADDR_ATTEMPTS;
+    uint32_t addr = find_free_addr(start_addr, end_addr);
+    if (addr == NOT_AVAILABLE_ADDR)
+        print_error("memory fault att");
+
+    if (addr == start_addr)
+        p->attempts = 3;
+    else
+        p->attempts = flash_read_byte(addr - 1);
+
+    printf("attempts are %u, in %u\n", p->attempts, is_master);
+    if(!p->attempts)
+        wait_to_try(is_master);
+}
+
+bool init_pwd_settings(void)
 {
     if (!is_init(true)) {
         if (_is_pwd_set(true))
             _load_pwd(true);
         else
             _load_default_m_pwd();
+        _set_attempts(true);
     }
 
     if (!is_init(false)) {
@@ -116,9 +123,13 @@ void init_pwd_settings(void)
             printf("pwd is set\n");
             _load_pwd(false);
         }
-        else
-            printf("pwd is not set!\n");
+        else {
+            print_no_pwd_msg();
+            return false;
+        }
+        _set_attempts(false);
     }
+    return true;
 }
 
 char get_pwd_sym(uint8_t pos, bool is_master)
@@ -128,13 +139,15 @@ char get_pwd_sym(uint8_t pos, bool is_master)
 
     if (pos >= len)
         return 255;
-
     return p[pos];
 }
 
-uint8_t get_pwd_len(void)
+uint8_t get_pwd_len(bool is_master)
 {
-    return pwd.pwd_len;
+    if (is_master)
+        return m_pwd.pwd_len;
+    else
+        return pwd.pwd_len;
 }
 
 char inc_value(uint8_t pos, bool is_master)
@@ -169,14 +182,20 @@ char dec_value(uint8_t pos, bool is_master)
     return p[pos];
 }
 
-bool is_pwd_correct(bool is_master)
+bool is_pwd_eq(bool is_master)
 {
+
     uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
-    uint8_t *p = is_master ? m_pwd.val : pwd.val;
+    struct Password *p = is_master ? &m_pwd : &pwd;
     uint8_t *new_p = is_master ? new_m_pwd.val : new_pwd.val;
 
+    if (!p->is_init) {
+        print_error("pwd not init. Fatal");
+        return false;
+    }
+
     for (uint8_t i = 0; i < len; i++) {
-        if (p[i] != new_p[i])
+        if (p->val[i] != new_p[i])
             return false;
     }
 
@@ -187,15 +206,129 @@ void save_pwd(bool is_master)
 {
     uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
     uint8_t *p = is_master ? new_m_pwd.val : new_pwd.val;
-    uint32_t start_addr = is_master ? FIRST_ADDR_MS_PWD_IS_SET : FIRST_ADDR_PWD_IS_SET;
-    uint32_t end_addr = is_master ? LAST_ADDR_MS_PWD_IS_SET : LAST_ADDR_PWD_IS_SET;
+    uint32_t start_addr = is_master ? FIRST_ADDR_MS_PWD : FIRST_ADDR_PWD;
+    uint32_t end_addr = is_master ? LAST_ADDR_MS_PWD : LAST_ADDR_PWD;
+    uint32_t is_set_addr_s = is_master ? FIRST_ADDR_MS_PWD_IS_SET : FIRST_ADDR_PWD_IS_SET;
+    uint32_t is_set_addr_e = is_master ? LAST_ADDR_MS_PWD_IS_SET : LAST_ADDR_PWD_IS_SET;
 
+
+    uint32_t addr = find_free_addr(start_addr, end_addr);
+    uint32_t is_set_addr = find_free_addr(is_set_addr_s, is_set_addr_e);
+    if (addr == NOT_AVAILABLE_ADDR || addr + len > end_addr) {
+        clear_page(start_addr, start_addr);
+        addr = find_free_addr(start_addr, end_addr);
+    }
+    if (is_set_addr == NOT_AVAILABLE_ADDR) {
+        clear_page(is_set_addr_s, is_set_addr_e);
+        is_set_addr = find_free_addr(is_set_addr_s, is_set_addr_e);
+    }
+
+    flash_unlock();
+    for (uint32_t i = 0; i < len; i++) {
+        flash_write_byte(addr + i, p[i]);
+    }
+    flash_write_byte(is_set_addr, 0x000000);
+    flash_lock();
+    _load_pwd(false);
 }
 
-void change_pwd(bool is_master)
+void dec_attempts(bool is_master)
 {
-    uint8_t len = is_master ? MASTER_PASS_LEN : PASS_LEN;
-    draw_pwd_input();
+    struct Password *p = is_master ? &m_pwd : &pwd;
+    uint32_t start_addr = is_master ? FIRST_ADDR_M_ATTEMPTS : FIRST_ADDR_ATTEMPTS;
+    uint32_t end_addr = is_master ? LAST_ADDR_M_ATTEMPTS : LAST_ADDR_ATTEMPTS;
+    uint32_t addr = find_free_addr(start_addr, end_addr);
+    if (p->attempts <= 3 && p->attempts > 0) {
+        p->attempts--;
+        if (addr == NOT_AVAILABLE_ADDR) {
+            clear_page(start_addr, end_addr);
+            addr = find_free_addr(start_addr, end_addr);
+        }
+        flash_write_byte(addr, p->attempts);
+    }
+    else
+        print_error("-1 attepmts! Error");
+}
+
+void restore_attempts(bool is_master)
+{
+    struct Password *p = is_master ? &m_pwd : &pwd;
+    uint32_t att_addr_s = is_master ? FIRST_ADDR_M_ATTEMPTS : FIRST_ADDR_ATTEMPTS;
+    uint32_t att_addr_e = is_master ? LAST_ADDR_M_ATTEMPTS : LAST_ADDR_ATTEMPTS;
+    uint32_t delay_addr_s = is_master ? FIRST_ADDR_M_DELAY : FIRST_ADDR_DELAY;
+    uint32_t delay_addr_e = is_master ? LAST_ADDR_M_DELAY : LAST_ADDR_DELAY;
+    uint32_t att_addr = find_free_addr(att_addr_s, att_addr_e);
+    uint32_t delay_addr = find_free_addr(delay_addr_s, delay_addr_e);
+
+    p->attempts = 3;
+
+    if (att_addr == NOT_AVAILABLE_ADDR) {
+        clear_page(att_addr_s, att_addr_e);
+        att_addr = find_free_addr(att_addr_s, att_addr_e);
+    }
+
+    if (delay_addr == NOT_AVAILABLE_ADDR) {
+        clear_page(delay_addr_s, delay_addr_e);
+        delay_addr = find_free_addr(delay_addr_s, delay_addr_e);
+    }
+
+    flash_write_byte(att_addr, p->attempts);
+    flash_write_byte(delay_addr, 0);
+}
+
+void add_attempt(bool is_master)
+{
+    struct Password *p = is_master ? &m_pwd : &pwd;
+    uint32_t start_addr = is_master ? FIRST_ADDR_M_ATTEMPTS : FIRST_ADDR_ATTEMPTS;
+    uint32_t end_addr = is_master ? LAST_ADDR_M_ATTEMPTS : LAST_ADDR_ATTEMPTS;
+    uint32_t addr = find_free_addr(start_addr, end_addr);
+    p->attempts = 1;
+    if (addr == NOT_AVAILABLE_ADDR) {
+        clear_page(start_addr, end_addr);
+        addr = find_free_addr(start_addr, end_addr);
+    }
+    flash_write_byte(addr, p->attempts);
+}
+
+uint8_t get_attempts(bool is_master)
+{
+    if (is_master)
+        return m_pwd.attempts;
+    else
+        return pwd.attempts;
+}
+
+void wait_to_try(bool is_master)
+{
+    uint32_t wait_time = 1;
+    uint32_t start_addr = is_master ? FIRST_ADDR_M_DELAY : FIRST_ADDR_DELAY;
+    uint32_t end_addr = is_master ? LAST_ADDR_M_DELAY : LAST_ADDR_DELAY;
+    uint32_t addr = find_free_addr(start_addr, end_addr);
+    uint8_t fac_val;
+    if (addr == NOT_AVAILABLE_ADDR)
+        print_error("memory err wait");
+    if (addr == start_addr)
+        fac_val = 0;
+    else
+        fac_val = flash_read_byte(addr - 1);
+
+    if (fac_val == 255)
+        print_error("invalid wait time");
+
+    for (uint8_t i = 0; i < fac_val; i++) {
+        wait_time *= DELAY_FAC;
+    }
+
+    print_info("Enter pass in");
+    print_error(" ");
+    for (uint32_t i = wait_time; i > 0; i--) {
+        print_wait_time(i);
+        sk_tick_delay_ms(1000);
+    }
+    flash_write_byte(addr, fac_val + 1);
+    add_attempt(is_master);
+    clear_pwd_input(is_master);
+    draw_pwd_input(is_master);
 }
 
 void get_m_pwd(void)

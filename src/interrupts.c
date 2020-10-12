@@ -23,12 +23,12 @@ void init_interrput_vars(void)
 static void handle_user_btn(void)
 {
     switch(lcd_menu->status) {
-        case ENTER_MASTER_PASS:
+        case ENTER_MASTER_PWD:
             break;
         default:
             clear_pwd_input(true);
             draw_pwd_input(true);
-            lcd_menu->status = ENTER_MASTER_PASS;
+            lcd_menu->status = ENTER_MASTER_PWD;
             break;
     }
 }
@@ -37,52 +37,102 @@ static void handle_center_btn(void)
 {
     switch(lcd_menu->status) {
         case MENU_INIT:
+            lcd_menu->status = ENTER_PWD;
             clear_pwd_input(false);
             draw_pwd_input(false);
             sk_lcd_cmd_onoffctl(lcd, true, true, false);
-            lcd_menu->status = ENTER_PASS;
             break;
-        case ENTER_PASS:
-            if (is_pwd_correct(0)) {
+        case ENTER_PWD:
+            if (is_pwd_eq(0) && !lcd_menu->is_in_master) {
                 lcd_menu->status = ACCESS_GRANTED;
-                sk_lcd_cmd_clear(lcd);
-                print_error("It is open");
-                sk_pin_toggle(sk_io_led_orange);
-            } else
-                lcd_menu->status = ACCESS_DENIED;
-            break;
-        case ENTER_MASTER_PASS:
-            if (is_pwd_correct(1)) {
-                lcd_menu->status = MASTER_ACCESS_GRANTED;
-                sk_lcd_cmd_clear(lcd);
-                lcd_putstring(lcd, "WELCOME TO MENU");
-                sk_tick_delay_ms(1500);
+                restore_attempts(false);
+                sk_lcd_cmd_onoffctl(lcd, true, false, false);
+                open_lock();
+            } else if (!is_pwd_eq(0) && lcd_menu->is_in_master) {
                 lcd_menu->status = OPTIONS1;
+                save_pwd(0);
+                restore_attempts(false);
+                sk_lcd_cmd_onoffctl(lcd, true, false, false);
+                print_error(" ");
+                print_info("   pwd changed");
+                sk_tick_delay_ms(1500);
                 print_options();
             } else {
-                lcd_menu->status = MASTER_ACCESS_DENIED;
-                print_error("false master pwd");
+                if (!lcd_menu->is_in_master) {
+                    uint8_t attempts = get_attempts(false);
+                    if (attempts <= 3 && attempts > 1) {
+                        char buff[16];
+                        dec_attempts(false);
+                        attempts--;
+                        print_error(" Input is wrong");
+                        sk_tick_delay_ms(1000);
+                        snprintf(buff, sizeof(buff), "%u more attempts", attempts);
+                        print_error(buff);
+                    } else if (attempts == 1) {
+                        dec_attempts(false);
+                        attempts--;
+                        wait_to_try(false);
+                        lcd_menu->status = ENTER_PWD;
+                    }
+                    else
+                        print_error("bad attempts value");
+                }
+                else {
+                    print_error("same pwd, change");
+                }
             }
             break;
-        case CHANGE_PWD:
-            //here correct means same pwd input
-            if (!is_pwd_correct(0)) {
-                save_pwd(0);
+        case ENTER_MASTER_PWD:
+            if (is_pwd_eq(1)) {
+                lcd_menu->status = MASTER_ACCESS_GRANTED;
+                restore_attempts(true);
+                sk_lcd_cmd_clear(lcd);
+                print_info("Welcome to menu");
+                sk_tick_delay_ms(1500);
+                lcd_menu->status = OPTIONS1;
+                lcd_menu->is_in_master = true;
+                print_options();
+            } else {
+                uint8_t attempts = get_attempts(true);
+                if (attempts <= 3 && attempts > 1) {
+                    char buff[16];
+                    dec_attempts(true);
+                    attempts--;
+                    print_error(" Input is wrong");
+                    sk_tick_delay_ms(1000);
+                    snprintf(buff, sizeof(buff), "%u more attempts", attempts);
+                    print_error(buff);
+                } else if (attempts == 1) {
+                    dec_attempts(true);
+                    attempts--;
+                    wait_to_try(true);
+                    lcd_menu->status = ENTER_MASTER_PWD;
+                }
+                else
+                    print_error("bad attempts value");
             }
-            else {
-                print_error("Same pwd, change");
-            }
+            break;
+        case ACCESS_GRANTED:
+            lcd_menu->status = MENU_INIT;
+            lcd_menu->is_in_master = false;
+            close_lock();
+            print_welcome_msg();
             break;
         case OPTIONS1:
             if (!lcd_menu->row) {
-                lcd_menu->state = CHANGE_PWD;
+                lcd_menu->status = ENTER_PWD;
+                clear_pwd_input(false);
                 draw_pwd_input(false);
             }
             else {
-                //handle second option
+                lcd_menu->status = MENU_INIT;
+                lcd_menu->is_in_master = false;
+                print_welcome_msg();
             }
+            break;
         default:
             sk_lcd_cmd_clear(lcd);
+            printf("status is %u\n", lcd_menu->status);
             lcd_putstring(lcd, "some error");
             break;
     }
@@ -91,12 +141,12 @@ static void handle_center_btn(void)
 static void handle_left_btn(void)
 {
     switch(lcd_menu->status) {
-        case ENTER_PASS:
+        case ENTER_PWD:
             hide_sym();
             move_cursor_left();
             show_sym(0);
             break;
-        case ENTER_MASTER_PASS:
+        case ENTER_MASTER_PWD:
             hide_sym();
             move_cursor_left();
             show_sym(1);
@@ -108,17 +158,17 @@ static void handle_left_btn(void)
 
 static void handle_right_btn(void)
 {
-    switch(lcd_menu->status) {
+    switch (lcd_menu->status) {
         case MENU_INIT:
             break;
-        case ENTER_PASS:
+        case ENTER_PWD:
             hide_sym();
-            move_cursor_right();
+            move_cursor_right(false);
             show_sym(0);
             break;
-        case ENTER_MASTER_PASS:
+        case ENTER_MASTER_PWD:
             hide_sym();
-            move_cursor_right();
+            move_cursor_right(true);
             show_sym(1);
             break;
         default:
@@ -129,53 +179,64 @@ static void handle_right_btn(void)
 static void handle_top_btn(void)
 {
     char new_symb = 255;
-    switch(lcd_menu->status) {
-        case ENTER_PASS:
+    switch (lcd_menu->status) {
+        case ENTER_PWD:
             new_symb = inc_value(lcd_menu->pwd_pos, false);
-            if(255 == new_symb)
+            if (255 == new_symb)
                 print_error("false inc symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
             break;
-        case ENTER_MASTER_PASS:
+        case ENTER_MASTER_PWD:
             new_symb = inc_value(lcd_menu->pwd_pos, true);
-            if(255 == new_symb)
+            if (255 == new_symb)
                 print_error("false inc symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
+            break;
+        case OPTIONS1:
+            move_row_curs();
+            break;
+        case OPTIONS2:
+            if(!lcd_menu->row) {
+                lcd_menu->status = OPTIONS1;
+                print_options();
+            }
+            move_row_curs();
             break;
         default:
             break;
-    }sk_pin_toggle(sk_io_led_orange);
+    }
 }
 
 static void handle_bottom_btn(void)
 {
     char new_symb = 255;
     switch(lcd_menu->status) {
-        case ENTER_PASS:
+        case ENTER_PWD:
             new_symb = dec_value(lcd_menu->pwd_pos, false);
-            if(255 == new_symb)
+            if(new_symb == 255)
                 print_error("false dec symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
             break;
-        case ENTER_MASTER_PASS:
+        case ENTER_MASTER_PWD:
             new_symb = dec_value(lcd_menu->pwd_pos, true);
-            if(255 == new_symb)
+            if(new_symb == 255)
                 print_error("false dec symbol");
             sk_lcd_putchar(lcd, new_symb);
             sk_lcd_cmd_shift(lcd, false, false);
             break;
         case OPTIONS1:
-            if(!lcd_menu->row) {
-                lcd_menu->row = 1;
-                //go to second option
-            } else {
+            if(lcd_menu->row) {
+                //go to second option list
                 lcd_menu->status = OPTIONS2;
-                lcd_menu->row = 0;
-                //go to next option list
+                print_next_options();
             }
+            move_row_curs();
+            break;
+        case OPTIONS2:
+            move_row_curs();
             break;
         default:
             break;
@@ -196,17 +257,14 @@ void exti0_isr(void)
 void exti9_5_isr(void)
 {
 	if (exti_get_flag_status(EXTI6)) {
-		sk_pin_toggle(sk_io_led_red);
         handle_top_btn();
 		exti_reset_request(EXTI6);
 	}
 	if (exti_get_flag_status(EXTI8)) {
-		sk_pin_toggle(sk_io_led_green);
         handle_bottom_btn();
 		exti_reset_request(EXTI8);
 	}
 	if (exti_get_flag_status(EXTI9)) {
-        sk_pin_toggle(sk_io_led_orange);
 		handle_left_btn();
 		exti_reset_request(EXTI9);
 	}
@@ -217,13 +275,86 @@ void exti9_5_isr(void)
 void exti15_10_isr(void)
 {
 	if (exti_get_flag_status(EXTI11)) {
-		sk_pin_toggle(sk_io_led_orange);
         handle_right_btn();
 		exti_reset_request(EXTI11);
 	}
 	if (exti_get_flag_status(EXTI15)) {
-		sk_pin_toggle(sk_io_led_blue);
 		handle_center_btn();
 		exti_reset_request(EXTI15);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+// static uint8_t plen [2] = {PASS_LEN, MASTER_PASS_LEN};
+// static uint8_t *pptr [2] = {new_pwd.val, new_m_pwd.val};
+//
+// char dec_value(uint8_t pos, bool is_master)
+// {
+//     uint8_t len = plen[is_master];
+//     uint8_t *p = pptr[is_master];
+//
+//     if (pos >= len)
+//         return 255;
+//
+//     p[pos]--;
+//
+//     if (p[pos] < '0')
+//         p[pos] = '9';
+//
+//     return p[pos];
+// }
+//
+// char inc_value(uint8_t pos, bool is_master)
+// {
+//     uint8_t len = plen[is_master];
+//     uint8_t *p = pptr[is_master];
+//
+//     if (pos >= len)
+//         return 255;
+//
+//     p[pos]++;
+//
+//     if (p[pos] > '9')
+//         p[pos] = '0';
+//
+//     return p[pos];
+// }
+//
+// ---------------------------------------------
+// static uint8_t plen [2] = {PASS_LEN, MASTER_PASS_LEN};
+// static uint8_t *pptr [2] = {new_pwd.val, new_m_pwd.val};
+//
+// char handle_pos_move(uint8_t pos, bool is_master, bool is_inc) {
+//
+// 	uint8_t len = plen[is_master];
+//     uint8_t *p = pptr[is_master];
+//
+// 	uint8_t diff = is_inc ? 10 : (uint8_t)(-10)
+// 	uint8_t inc = is_inc ? 1 : (uint8_t)(-1)
+//
+//     if (pos >= len)
+//         return 255;
+//
+// 	p[pos] += inc;
+//
+// 	if (p[pos] > '9' || p[pos] < '0')
+// 		p[pos] += diff
+//
+// 	return p[pos]
+// }
+//
+// char inc_value(uint8_t pos, bool is_master) {
+// 	return handle_pos_move(pos, is_master, true);
+// }
+//
+// char dec_value(uint8_t pos, bool is_master) {
+// 	return handle_pos_move(pos, is_master, false);
+// }
