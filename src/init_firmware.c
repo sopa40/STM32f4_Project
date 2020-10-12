@@ -72,6 +72,7 @@ int main (void)
 	/* configuration successful end */
 	sk_pin_set(sk_io_led_red, false);
 
+	/**writing default master password in corresponding memory segment */
     flash_unlock();
     flash_erase_full();
     flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD, '1');

@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 //TODO: add pwd len setting in master menu
-//WARNING!! master pwd len must not be longer than pwd len
+//WARNING! master pwd len must not be longer than pwd len
 #define PASS_LEN 6
 #define MASTER_PASS_LEN 4
 #define DELAY_FAC 2

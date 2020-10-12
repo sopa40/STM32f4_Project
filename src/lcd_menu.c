@@ -106,7 +106,7 @@ static void return_cursor_back(void)
         sk_lcd_cmd_shift(lcd, false, true);
 }
 
-/** clears top row content of lcd display*/
+/** clears top row content of lcd display */
 static void clear_top_row(void)
 {
     sk_lcd_cmd_setaddr(lcd, 0x00, false);
@@ -115,7 +115,7 @@ static void clear_top_row(void)
     return_cursor_back();
 }
 
-/** clears bottom row content of lcd display*/
+/** clears bottom row content of lcd display */
 static void clear_bottom_row(void)
 {
     sk_lcd_cmd_setaddr(lcd, 0x40, false);
@@ -186,7 +186,7 @@ void draw_pwd_input(bool is_master)
     }
 }
 
-void show_row_cursor(bool row)
+static void show_row_cursor(bool row)
 {
     uint8_t addr = row ? 0x4F : 0x0F;
     uint8_t old_addr = row ? 0x0F : 0x4F;
@@ -230,6 +230,7 @@ void move_cursor_left(void)
         print_error("can't move left!");
         sk_tick_delay_ms(1500);
         clear_bottom_row();
+        sk_lcd_cmd_onoffctl(lcd, true, true, false);
     }
 }
 
@@ -244,6 +245,7 @@ void move_cursor_right(bool is_master)
         print_error("can't move right!");
         sk_tick_delay_ms(1500);
         clear_bottom_row();
+        sk_lcd_cmd_onoffctl(lcd, true, true, false);
     }
 }
 
@@ -263,7 +265,7 @@ void show_sym(bool is_master)
         print_error("False symbol pos\n");
 }
 
-/* just imitation */
+
 void open_lock(void)
 {
     sk_pin_set(sk_io_led_red, false);

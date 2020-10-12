@@ -18,7 +18,6 @@ enum MENU_STATUS {
 	ACCESS_GRANTED,
 	MASTER_ACCESS_GRANTED,
 	CHANGE_PWD,
-	PWD_CHANGED,
 	OPTIONS1,
 	OPTIONS2,
 	FATAL_ERROR
@@ -58,9 +57,6 @@ void print_error(const char *str);
 
 /** draws password symbols and shows first */
 void draw_pwd_input(bool is_master);
-
-/** shows custom symbol, that shows current row (for menu navigation) */
-void show_row_cursor(bool row);
 
 /** moves cursor to another row (used in master menu for navigation) */
 void move_row_curs(void);

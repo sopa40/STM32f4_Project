@@ -98,6 +98,7 @@ int main (void)
 	sk_pin_set(sk_io_led_blue, false);
 	sk_pin_set(sk_io_led_red, true);
 
+
 	while (1) {
 
 	}

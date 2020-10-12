@@ -24,9 +24,22 @@ static void handle_user_btn(void)
 {
     switch(lcd_menu->status) {
         case ENTER_MASTER_PWD:
+            clear_pwd_input(true);
+            clear_pwd_input(false);
+            lcd_menu->status = MENU_INIT;
+            print_welcome_msg();
+            break;
+        case OPTIONS1:
+            break;
+        case OPTIONS2:
+            break;
+        case CHANGE_PWD:
+            break;
+        case FATAL_ERROR:
             break;
         default:
             clear_pwd_input(true);
+            clear_pwd_input(false);
             draw_pwd_input(true);
             lcd_menu->status = ENTER_MASTER_PWD;
             break;
@@ -46,13 +59,11 @@ static void handle_center_btn(void)
             if (is_pwd_eq(0) && !lcd_menu->is_in_master) {
                 lcd_menu->status = ACCESS_GRANTED;
                 restore_attempts(false);
-                sk_lcd_cmd_onoffctl(lcd, true, false, false);
                 open_lock();
             } else if (!is_pwd_eq(0) && lcd_menu->is_in_master) {
                 lcd_menu->status = OPTIONS1;
                 save_pwd(0);
                 restore_attempts(false);
-                sk_lcd_cmd_onoffctl(lcd, true, false, false);
                 print_error(" ");
                 print_info("   pwd changed");
                 sk_tick_delay_ms(1500);
@@ -68,10 +79,12 @@ static void handle_center_btn(void)
                         sk_tick_delay_ms(1000);
                         snprintf(buff, sizeof(buff), "%u more attempts", attempts);
                         print_error(buff);
+                        sk_lcd_cmd_onoffctl(lcd, true, true, false);
                     } else if (attempts == 1) {
                         dec_attempts(false);
                         attempts--;
                         wait_to_try(false);
+                        sk_lcd_cmd_onoffctl(lcd, true, true, false);
                         lcd_menu->status = ENTER_PWD;
                     }
                     else
@@ -84,13 +97,12 @@ static void handle_center_btn(void)
             break;
         case ENTER_MASTER_PWD:
             if (is_pwd_eq(1)) {
-                lcd_menu->status = MASTER_ACCESS_GRANTED;
                 restore_attempts(true);
                 sk_lcd_cmd_clear(lcd);
                 print_info("Welcome to menu");
                 sk_tick_delay_ms(1500);
-                lcd_menu->status = OPTIONS1;
                 lcd_menu->is_in_master = true;
+                lcd_menu->status = OPTIONS1;
                 sk_pin_set(sk_io_led_orange, true);
                 print_options();
             } else {
@@ -103,11 +115,13 @@ static void handle_center_btn(void)
                     sk_tick_delay_ms(1000);
                     snprintf(buff, sizeof(buff), "%u more attempts", attempts);
                     print_error(buff);
+                    sk_lcd_cmd_onoffctl(lcd, true, true, false);
                 } else if (attempts == 1) {
                     dec_attempts(true);
                     attempts--;
                     wait_to_try(true);
                     lcd_menu->status = ENTER_MASTER_PWD;
+                    sk_lcd_cmd_onoffctl(lcd, true, true, false);
                 }
                 else
                     print_error("bad attempts value");
@@ -133,6 +147,8 @@ static void handle_center_btn(void)
                 print_welcome_msg();
             }
             break;
+        case FATAL_ERROR:
+            break;
         default:
             sk_lcd_cmd_clear(lcd);
             printf("status is %u\n", lcd_menu->status);
@@ -154,6 +170,8 @@ static void handle_left_btn(void)
             move_cursor_left();
             show_sym(1);
             break;
+        case FATAL_ERROR:
+            break;
         default:
             break;
     }
@@ -173,6 +191,8 @@ static void handle_right_btn(void)
             hide_sym();
             move_cursor_right(true);
             show_sym(1);
+            break;
+        case FATAL_ERROR:
             break;
         default:
             break;
@@ -206,6 +226,8 @@ static void handle_top_btn(void)
                 print_options();
             }
             move_row_curs();
+            break;
+        case FATAL_ERROR:
             break;
         default:
             break;
@@ -241,6 +263,8 @@ static void handle_bottom_btn(void)
         case OPTIONS2:
             move_row_curs();
             break;
+        case FATAL_ERROR:
+            break;
         default:
             break;
     }
@@ -260,6 +284,7 @@ void exti0_isr(void)
 //PC9 left
 void exti9_5_isr(void)
 {
+    /** simple deboucing */
     sk_tick_delay_ms(100);
 	if (exti_get_flag_status(EXTI6)) {
         handle_top_btn();
@@ -289,78 +314,3 @@ void exti15_10_isr(void)
 		exti_reset_request(EXTI15);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-// static uint8_t plen [2] = {PASS_LEN, MASTER_PASS_LEN};
-// static uint8_t *pptr [2] = {new_pwd.val, new_m_pwd.val};
-//
-// char dec_value(uint8_t pos, bool is_master)
-// {
-//     uint8_t len = plen[is_master];
-//     uint8_t *p = pptr[is_master];
-//
-//     if (pos >= len)
-//         return 255;
-//
-//     p[pos]--;
-//
-//     if (p[pos] < '0')
-//         p[pos] = '9';
-//
-//     return p[pos];
-// }
-//
-// char inc_value(uint8_t pos, bool is_master)
-// {
-//     uint8_t len = plen[is_master];
-//     uint8_t *p = pptr[is_master];
-//
-//     if (pos >= len)
-//         return 255;
-//
-//     p[pos]++;
-//
-//     if (p[pos] > '9')
-//         p[pos] = '0';
-//
-//     return p[pos];
-// }
-//
-// ---------------------------------------------
-// static uint8_t plen [2] = {PASS_LEN, MASTER_PASS_LEN};
-// static uint8_t *pptr [2] = {new_pwd.val, new_m_pwd.val};
-//
-// char handle_pos_move(uint8_t pos, bool is_master, bool is_inc) {
-//
-// 	uint8_t len = plen[is_master];
-//     uint8_t *p = pptr[is_master];
-//
-// 	uint8_t diff = is_inc ? 10 : (uint8_t)(-10)
-// 	uint8_t inc = is_inc ? 1 : (uint8_t)(-1)
-//
-//     if (pos >= len)
-//         return 255;
-//
-// 	p[pos] += inc;
-//
-// 	if (p[pos] > '9' || p[pos] < '0')
-// 		p[pos] += diff
-//
-// 	return p[pos]
-// }
-//
-// char inc_value(uint8_t pos, bool is_master) {
-// 	return handle_pos_move(pos, is_master, true);
-// }
-//
-// char dec_value(uint8_t pos, bool is_master) {
-// 	return handle_pos_move(pos, is_master, false);
-// }
