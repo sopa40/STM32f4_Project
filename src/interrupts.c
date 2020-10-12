@@ -91,6 +91,7 @@ static void handle_center_btn(void)
                 sk_tick_delay_ms(1500);
                 lcd_menu->status = OPTIONS1;
                 lcd_menu->is_in_master = true;
+                sk_pin_set(sk_io_led_orange, true);
                 print_options();
             } else {
                 uint8_t attempts = get_attempts(true);
@@ -115,6 +116,7 @@ static void handle_center_btn(void)
         case ACCESS_GRANTED:
             lcd_menu->status = MENU_INIT;
             lcd_menu->is_in_master = false;
+            sk_pin_set(sk_io_led_orange, false);
             close_lock();
             print_welcome_msg();
             break;
@@ -127,6 +129,7 @@ static void handle_center_btn(void)
             else {
                 lcd_menu->status = MENU_INIT;
                 lcd_menu->is_in_master = false;
+                sk_pin_set(sk_io_led_orange, false);
                 print_welcome_msg();
             }
             break;
@@ -247,6 +250,7 @@ static void handle_bottom_btn(void)
 //PA0 user
 void exti0_isr(void)
 {
+    sk_tick_delay_ms(100);
     handle_user_btn();
     exti_reset_request(EXTI0);
 }
@@ -256,6 +260,7 @@ void exti0_isr(void)
 //PC9 left
 void exti9_5_isr(void)
 {
+    sk_tick_delay_ms(100);
 	if (exti_get_flag_status(EXTI6)) {
         handle_top_btn();
 		exti_reset_request(EXTI6);
@@ -274,6 +279,7 @@ void exti9_5_isr(void)
 //PA15 mid
 void exti15_10_isr(void)
 {
+    sk_tick_delay_ms(100);
 	if (exti_get_flag_status(EXTI11)) {
         handle_right_btn();
 		exti_reset_request(EXTI11);

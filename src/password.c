@@ -1,6 +1,6 @@
 #include "password.h"
 
-
+//TODO: refactor = is_master ? :  with arrays
 
 #include <stdio.h>
 
@@ -54,6 +54,7 @@ static void _load_default_m_pwd(void)
     for (uint8_t i = 0; i < MASTER_PASS_LEN; i++) {
         m_pwd.val[i] = flash_read_byte(start_addr + i);
         if (m_pwd.val[i] == 255) {
+            //TODO: handle it as a fatal error
             print_error("FATAL ERROR!\n");
         }
     }
@@ -124,7 +125,8 @@ bool init_pwd_settings(void)
             _load_pwd(false);
         }
         else {
-            print_no_pwd_msg();
+            if(m_pwd.val[0] != 255)
+                print_no_pwd_msg();
             return false;
         }
         _set_attempts(false);

@@ -64,6 +64,11 @@ void init_menu_vars(void)
     lcd = get_lcd();
 }
 
+/** adds custom letter to CGRAM memory of display
+ *  @lcd_disp: LCD display
+ *  @addr: CGRAM address, where symbol should be written
+ *  @letter_code: byte array of symbol code
+*/
 static void _add_letter(struct sk_lcd *lcd_disp, uint8_t addr, const char letter_code[])
 {
 	sk_lcd_cmd_setaddr(lcd_disp, addr, true);
@@ -72,6 +77,7 @@ static void _add_letter(struct sk_lcd *lcd_disp, uint8_t addr, const char letter
 	}
 }
 
+/** adds couple of letters at a time */
 static void add_letters(void) {
     _add_letter(lcd, 0x00, ii_code);
     _add_letter(lcd, 0x08, je_code);
@@ -88,6 +94,7 @@ void init_lcd_with_settings(void)
     print_welcome_msg();
 }
 
+/** returns cursor (sets lcd DGRAM address) to the position specified in lcd_menu struct */
 static void return_cursor_back(void)
 {
     if (!lcd_menu.row)
@@ -99,6 +106,7 @@ static void return_cursor_back(void)
         sk_lcd_cmd_shift(lcd, false, true);
 }
 
+/** clears top row content of lcd display*/
 static void clear_top_row(void)
 {
     sk_lcd_cmd_setaddr(lcd, 0x00, false);
@@ -107,6 +115,7 @@ static void clear_top_row(void)
     return_cursor_back();
 }
 
+/** clears bottom row content of lcd display*/
 static void clear_bottom_row(void)
 {
     sk_lcd_cmd_setaddr(lcd, 0x40, false);

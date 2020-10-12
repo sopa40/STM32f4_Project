@@ -69,7 +69,6 @@ int main (void)
 	init_variables();
  	clock_init();
  	spi_init();
-
 	rcc_periph_clock_enable(RCC_GPIOD);		//LEDS
 	rcc_periph_clock_enable(RCC_GPIOA);		//center btn and user btn
 	rcc_periph_clock_enable(RCC_GPIOC);		//other btns
@@ -82,9 +81,14 @@ int main (void)
 
 	sk_tick_init(16000000ul / 10000ul);
 
-	clear_page(FIRST_ADDR_DELAY, LAST_ADDR_DELAY);
-
 	init_lcd_with_settings();
+
+	flash_unlock();
+	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD, '1');
+	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD + 1, '0');
+	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD + 2, '1');
+	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD + 3, '0');
+	flash_lock();
 
 	if (!init_pwd_settings())
 		lcd_menu->status = PWD_NOT_SET;
