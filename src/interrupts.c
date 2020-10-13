@@ -20,6 +20,11 @@ void init_interrput_vars(void)
 	lcd_menu = get_lcd_menu();
 }
 
+/*!
+*
+*	\brief 					handles user btn press
+*
+*/
 static void handle_user_btn(void)
 {
     switch(lcd_menu->status) {
@@ -46,6 +51,11 @@ static void handle_user_btn(void)
     }
 }
 
+/*!
+*
+*	\brief 					handles center btn press
+*
+*/
 static void handle_center_btn(void)
 {
     switch(lcd_menu->status) {
@@ -157,16 +167,19 @@ static void handle_center_btn(void)
     }
 }
 
+/*!
+*
+*	\brief 					handles left btn press
+*
+*/
 static void handle_left_btn(void)
 {
     switch(lcd_menu->status) {
         case ENTER_PWD:
-            hide_sym();
             move_cursor_left();
             show_sym(0);
             break;
         case ENTER_MASTER_PWD:
-            hide_sym();
             move_cursor_left();
             show_sym(1);
             break;
@@ -177,18 +190,21 @@ static void handle_left_btn(void)
     }
 }
 
+/*!
+*
+*	\brief 					handles right btn press
+*
+*/
 static void handle_right_btn(void)
 {
     switch (lcd_menu->status) {
         case MENU_INIT:
             break;
         case ENTER_PWD:
-            hide_sym();
             move_cursor_right(false);
             show_sym(0);
             break;
         case ENTER_MASTER_PWD:
-            hide_sym();
             move_cursor_right(true);
             show_sym(1);
             break;
@@ -199,6 +215,11 @@ static void handle_right_btn(void)
     }
 }
 
+/*!
+*
+*	\brief 					handles top btn press
+*
+*/
 static void handle_top_btn(void)
 {
     char new_symb = 255;
@@ -234,6 +255,11 @@ static void handle_top_btn(void)
     }
 }
 
+/*!
+*
+*	\brief 					handles bottom btn press
+*
+*/
 static void handle_bottom_btn(void)
 {
     char new_symb = 255;

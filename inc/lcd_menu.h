@@ -26,63 +26,130 @@ enum MENU_STATUS {
 struct Menu {
 	enum MENU_STATUS status;
 	uint8_t pos;
-	bool row;
 	uint8_t pwd_pos;
+	bool row;
 	bool is_in_master;
 };
 
 struct Menu *get_lcd_menu (void);
 
 
-/** initializes variables (lcd display) */
+
+ /*!
+ *
+ *	\brief 					initializes variables (lcd display)
+ *
+ */
 void init_menu_vars(void);
 
-/** initalizes lcd display and sets some setting */
+
+/*!
+*
+*	\brief 					initalizes lcd display and sets some setting
+*
+*/
 void init_lcd_with_settings(void);
 
-/** prints welcome message to the lcd display */
+/*!
+*
+*	\brief 					prints welcome message to the lcd display
+*
+*/
 void print_welcome_msg(void);
 
-/** prints message when pwd is not set */
+/*!
+*
+*	\brief 					prints message when pwd is not set
+*
+*/
 void print_no_pwd_msg(void);
 
-/** prints wait time on the bottom row of lcd display */
+/*!
+*
+*	\brief 					prints wait time on the bottom row of lcd display
+*
+*/
 void print_wait_time(uint32_t time);
 
-/** clears top row of lcd display and prints string */
+/*!
+*
+*	\brief 					clears top row of lcd display and prints string
+*
+* 	\param[str]				string to be printed
+*
+*/
 void print_info(const char *str);
 
-/** clear botoom row of lcd display and prints string */
+/*!
+*
+*	\brief 					clear botoom row of lcd display and prints string
+*
+* 	\param[str]				string to be printed
+*
+*/
 void print_error(const char *str);
 
-/** draws password symbols and shows first */
+/*!
+*
+*	\brief 					draws password symbols and shows first of them
+*
+*/
 void draw_pwd_input(bool is_master);
 
-/** moves cursor to another row (used in master menu for navigation) */
+/*!
+*
+*	\brief 					moves cursor to another row (used in master menu for navigation)
+*
+*/
 void move_row_curs(void);
 
-/** prints first option list */
+/*!
+*
+*	\brief 					prints first option list
+*
+*/
 void print_options(void);
 
-/** prints second option list */
+/*!
+*
+*	\brief 					prints second option list
+*
+*/
 void print_next_options(void);
 
-/** moves cursor one symbol to the left */
+/*!
+*
+*	\brief 					moves cursor one symbol to the left
+*
+*/
 void move_cursor_left(void);
 
-/** moves cursor one symbol to the right */
+/*!
+*
+*	\brief 					moves cursor one symbol to the right
+*
+*/
 void move_cursor_right(bool is_master);
 
-/** hides symbol when moving to another password symbol */
-void hide_sym(void);
-
-/** shows current symbol on cursor position */
+/*!
+*
+*	\brief 					shows current symbol on cursor position
+*
+*/
 void show_sym(bool is_master);
 
-/** imitates lock opening */
+/*!
+*
+*	\brief 					imitates lock opening
+*
+*/
 void open_lock(void);
 
-/** imitates lock closing */
+/*!
+*
+*	\brief 					imitates lock closing
+*
+*/
 void close_lock(void);
 
 #endif //LCD_MENU_H

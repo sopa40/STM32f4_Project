@@ -49,8 +49,8 @@ static struct sk_lcd *lcd = NULL;
 static struct Menu lcd_menu = {
 	.status = MENU_INIT,
 	.pos = 0,
-	.row = 0,
     .pwd_pos = 10,   //invalid value
+	.row = 0,
     .is_in_master = false
 };
 
@@ -220,8 +220,22 @@ void print_next_options(void)
     show_row_cursor(lcd_menu.row);
 }
 
+
+/*!
+*
+*	\brief 					hides symbol when moving to another password symbol
+*
+*/
+static void hide_sym(void)
+{
+    sk_lcd_putchar(lcd, '*');
+    sk_lcd_cmd_shift(lcd, false, false);
+}
+
+//TODO: maybe refactor to move_cursor(bool is_dir_right)
 void move_cursor_left(void)
 {
+    hide_sym();
     if(0 != lcd_menu.pwd_pos) {
         lcd_menu.pos--;
         lcd_menu.pwd_pos--;
@@ -237,6 +251,7 @@ void move_cursor_left(void)
 void move_cursor_right(bool is_master)
 {
     uint8_t len = get_pwd_len(is_master);
+    hide_sym();
     if(len - 1 != lcd_menu.pwd_pos) {
         lcd_menu.pos++;
         lcd_menu.pwd_pos++;
@@ -249,11 +264,6 @@ void move_cursor_right(bool is_master)
     }
 }
 
-void hide_sym(void)
-{
-    sk_lcd_putchar(lcd, '*');
-    sk_lcd_cmd_shift(lcd, false, false);
-}
 
 void show_sym(bool is_master)
 {

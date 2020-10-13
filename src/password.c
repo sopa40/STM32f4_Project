@@ -30,9 +30,9 @@ static struct New_Password new_pwd = {
     .val = {'0', '0', '0', '0', '0', '0'}
 };
 
-static uint8_t plen [2] = {PASS_LEN, MASTER_PASS_LEN};
-static uint8_t *new_pptr [2] = {new_pwd.val, new_m_pwd.val};
 static struct Password *str_ptr [2] = {&pwd, &m_pwd};
+static uint8_t *new_pptr [2] = {new_pwd.val, new_m_pwd.val};
+static uint8_t plen [2] = {PASS_LEN, MASTER_PASS_LEN};
 static uint32_t is_pwd_set_s [2] = {FIRST_ADDR_PWD_IS_SET, FIRST_ADDR_MS_PWD_IS_SET};
 static uint32_t is_pwd_set_e [2] = {LAST_ADDR_PWD_IS_SET, LAST_ADDR_MS_PWD_IS_SET};
 static uint32_t pwd_val_s [2] = {FIRST_ADDR_PWD, FIRST_ADDR_MS_PWD};
@@ -164,6 +164,17 @@ uint8_t get_pwd_len(bool is_master)
         return pwd.pwd_len;
 }
 
+/*!
+*	\brief 					increases or decreases symbol in password
+*
+*	\param[pos]				Position in the password to be changed
+*
+*	\param[is_master]		Determines if master password or simple pwd
+*
+*   \param [is_inc]         Determines if password should be increased (true) or decreased (false)
+*
+*	\return					255 if position bigger than max pass len. Otherwise password symbol that was changed
+*/
 static char handle_pos_move(uint8_t pos, bool is_master, bool is_inc)
 {
 	uint8_t len = plen[is_master];
@@ -284,7 +295,13 @@ void restore_attempts(bool is_master)
     flash_write_byte(delay_addr, 0);
 }
 
-void add_attempt(bool is_master)
+/*!
+*	\brief 					Adds one password attempt
+*
+*	\param[is_master]		Determines if master password or simple pwd
+*
+*/
+static void add_attempt(bool is_master)
 {
     struct Password *p = str_ptr[is_master];
     uint32_t start_addr = attempts_s[is_master];

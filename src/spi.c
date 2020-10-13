@@ -28,6 +28,8 @@ const uint8_t cmd_erase_full = 0xC7;
 const uint8_t cmd_read_status_reg = 0x05;
 const uint8_t cmd_read = 0x03;
 const uint8_t cmd_write_status_register = 0x01;
+const uint8_t cmd_unlock_whole_flash_for_writing = 0x00;
+const uint8_t cmd_lock_whole_flash_for_writing = 0xFF;
 
 
 void clock_init(void)
@@ -136,14 +138,26 @@ void spi_init(void)
 	spi_enable(SPI1);
 }
 
-
-// sets cs pin
-void cs_set(bool state)
+/*!
+*	\brief 					Sets cs_set pin to low or high
+*
+*	\param[state]		    Determines state of pin
+*
+*/
+static void cs_set(bool state)
 {
 	sk_pin_set(sk_io_spiflash_ce, state);
 }
 
-void flash_tx(uint32_t len, const void *data)
+/*!
+*	\brief 					Writes data to the SPI flash
+*
+*	\param[len]				Length of data to be written
+*
+*	\param[data]			Pointer to the data to be written
+*
+*/
+static void flash_tx(uint32_t len, const void *data)
 {
 	const uint8_t *d = data;
 	if ((!len) || (NULL == d))
@@ -155,7 +169,15 @@ void flash_tx(uint32_t len, const void *data)
 	}
 }
 
-void flash_rx(uint32_t len, const void *data)
+/*!
+*	\brief 					Reades data from SPI flash
+*
+*	\param[len]				Length of data to be written
+*
+*	\param[data]			Pointer to the data to be written
+*
+*/
+static void flash_rx(uint32_t len, const void *data)
 {
 	// Note:
 	// Our spi chip uses Big Endian byte order, while MCU is Little Endian
@@ -175,7 +197,13 @@ void flash_rx(uint32_t len, const void *data)
 	}
 }
 
-uint8_t get_status_register(void)
+/*!
+*	\brief 					Reads status register of SPI
+*
+*
+*	\return					Returns byte value of SPI status register
+*/
+static uint8_t get_status_register(void)
 {
 		uint8_t result_status = 0;
 		const uint8_t get_status = 0x05;
@@ -190,13 +218,21 @@ uint8_t get_status_register(void)
 		return result_status;
 }
 
-void write_enable(void)
+/*!
+*	\brief 					Enables flash for writing
+*
+*/
+static void write_enable(void)
 {
     cs_set(0);
     flash_tx(1, &cmd_write_enable);
     cs_set(1);
 }
 
+/*!
+*	\brief 					Disnables flash for writing
+*
+*/
 void write_disable(void)
 {
     cs_set(0);
@@ -204,27 +240,38 @@ void write_disable(void)
     cs_set(1);
 }
 
+/*!
+*	\brief 					Unlocks flash for writing
+*
+*/
 void flash_unlock(void)
 {
-    uint8_t reg = 0x00;
 	write_enable();
     cs_set(0);
     flash_tx(1, &cmd_write_status_register);
-    flash_tx(1, &reg);
+    flash_tx(1, &cmd_unlock_whole_flash_for_writing);
     cs_set(1);
 	write_disable();
 }
 
+/*!
+*	\brief 					Locks flash for writing
+*
+*/
 void flash_lock(void)
 {
-    uint8_t reg = 0xFF;
     cs_set(0);
     flash_tx(1, &cmd_write_status_register);
-    flash_tx(1, &reg);
+    flash_tx(1, &cmd_lock_whole_flash_for_writing);
     cs_set(1);
 }
 
-bool is_busy(void)
+/*!
+*	\brief 					Reads status register and checks if BUSY_BIT is set
+*
+*	\return 				True if busy. False otherwise
+*/
+static bool is_busy(void)
 {
 	uint8_t status_register;
     cs_set(0);
@@ -234,16 +281,12 @@ bool is_busy(void)
     return status_register & BUSY_BIT;
 }
 
-uint8_t flash_show_status_reg(void)
-{
-	uint8_t reg = 0;
-    cs_set(0);
-    flash_tx(1, &cmd_read_status_reg);
-    flash_rx(1, &reg);
-    cs_set(1);
-	return reg;
-}
-
+/*!
+*	\brief 					Send address to the SPI flash_rx
+*
+*	\param[addr] 			Address to be sent
+*
+*/
 static void send_addr(uint32_t addr)
 {
 	uint8_t addr_part = (uint8_t) (addr >> 16);
@@ -253,6 +296,7 @@ static void send_addr(uint32_t addr)
 	addr_part = (uint8_t) (addr);
     flash_tx(1, &addr_part);
 }
+
 
 void flash_write_byte(uint32_t addr, uint8_t data)
 {
@@ -283,7 +327,14 @@ uint8_t flash_read_byte(uint32_t addr)
 	flash_lock();
 }
 
-void flash_erase_4kb(uint32_t start_addr)
+/*!
+*	\brief 					Erases 4KByte sector from Flash
+*
+*
+*	\param[start_addr]		Start address of the 4KByte memory sector to be erased
+*
+*/
+static void flash_erase_4kb(uint32_t start_addr)
 {
 	flash_unlock();
 	while(is_busy());
@@ -296,7 +347,14 @@ void flash_erase_4kb(uint32_t start_addr)
 	flash_lock();
 }
 
-void flash_erase_32kb(uint32_t start_addr)
+/*!
+*	\brief 					Erases 32KByte sector from Flash
+*
+*
+*	\param[start_addr]		Start address of the 32KByte memory sector to be erased
+*
+*/
+static void flash_erase_32kb(uint32_t start_addr)
 {
 	flash_unlock();
 	while(is_busy());
@@ -309,7 +367,14 @@ void flash_erase_32kb(uint32_t start_addr)
 	flash_lock();
 }
 
-void flash_erase_64kb(uint32_t start_addr)
+/*!
+*	\brief 					Erases 64KByte sector from Flash
+*
+*
+*	\param[start_addr]		Start address of the 64KByte memory sector to be erased
+*
+*/
+static void flash_erase_64kb(uint32_t start_addr)
 {
 	flash_unlock();
 	while(is_busy());
@@ -322,7 +387,12 @@ void flash_erase_64kb(uint32_t start_addr)
 	flash_lock();
 }
 
-void flash_erase_full(void)
+
+/*!
+*	\brief 					Erases whole Flash memory
+*
+*/
+static void flash_erase_full(void)
 {
 	flash_unlock();
     while(is_busy());
