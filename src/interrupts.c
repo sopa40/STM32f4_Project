@@ -32,16 +32,16 @@ static void handle_user_btn(void)
             if(lcd_menu->is_in_master)
                 break;
             else {
+                lcd_menu->status = ENTER_MASTER_PWD;
                 clear_pwd_input(true);
                 clear_pwd_input(false);
                 draw_pwd_input(true);
-                lcd_menu->status = ENTER_MASTER_PWD;
                 break;
             }
         case ENTER_MASTER_PWD:
+            lcd_menu->status = MENU_INIT;
             clear_pwd_input(true);
             clear_pwd_input(false);
-            lcd_menu->status = MENU_INIT;
             print_welcome_msg();
             break;
         case OPTIONS1:
@@ -50,13 +50,15 @@ static void handle_user_btn(void)
             break;
         case CHANGE_PWD:
             break;
+        case ACCESS_GRANTED:
+            break;
         case FATAL_ERROR:
             break;
         default:
+            lcd_menu->status = ENTER_MASTER_PWD;
             clear_pwd_input(true);
             clear_pwd_input(false);
             draw_pwd_input(true);
-            lcd_menu->status = ENTER_MASTER_PWD;
             break;
     }
 }
@@ -117,12 +119,12 @@ static void handle_center_btn(void)
             break;
         case ENTER_MASTER_PWD:
             if (is_pwd_eq(1)) {
+                lcd_menu->status = OPTIONS1;
+                lcd_menu->is_in_master = true;
                 restore_attempts(true);
                 sk_lcd_cmd_clear(lcd);
                 print_info("Welcome to menu");
                 sk_tick_delay_ms(1500);
-                lcd_menu->is_in_master = true;
-                lcd_menu->status = OPTIONS1;
                 sk_pin_set(sk_io_led_orange, true);
                 print_options();
             } else {
@@ -137,10 +139,10 @@ static void handle_center_btn(void)
                     print_error(buff);
                     sk_lcd_cmd_onoffctl(lcd, true, true, false);
                 } else if (attempts == 1) {
+                    lcd_menu->status = ENTER_MASTER_PWD;
                     dec_attempts(true);
                     attempts--;
                     wait_to_try(true);
-                    lcd_menu->status = ENTER_MASTER_PWD;
                     sk_lcd_cmd_onoffctl(lcd, true, true, false);
                 }
                 else
@@ -170,6 +172,7 @@ static void handle_center_btn(void)
         case FATAL_ERROR:
             break;
         default:
+            lcd_menu->status = SOME_ERROR;
             sk_lcd_cmd_clear(lcd);
             printf("status is %u\n", lcd_menu->status);
             lcd_putstring(lcd, "some error");

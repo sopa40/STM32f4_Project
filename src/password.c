@@ -221,7 +221,7 @@ bool is_pwd_eq(bool is_master)
 void save_pwd(bool is_master)
 {
     uint8_t len = plen[is_master];
-    struct Password *p = str_ptr[is_master];
+    uint8_t *p = new_pptr[is_master];
     uint32_t start_addr = pwd_val_s[is_master];
     uint32_t end_addr = pwd_val_e[is_master];
     uint32_t is_set_addr_s = is_pwd_set_s[is_master];
@@ -240,11 +240,11 @@ void save_pwd(bool is_master)
 
     flash_unlock();
     for (uint32_t i = 0; i < len; i++) {
-        flash_write_byte(addr + i, p->val[i]);
+        flash_write_byte(addr + i, p[i]);
     }
     flash_write_byte(is_set_addr, 0x000000);
     flash_lock();
-    _load_pwd(false);
+    _load_pwd(is_master);
 }
 
 void dec_attempts(bool is_master)
