@@ -28,6 +28,16 @@ void init_interrput_vars(void)
 static void handle_user_btn(void)
 {
     switch(lcd_menu->status) {
+        case ENTER_PWD:
+            if(lcd_menu->is_in_master)
+                break;
+            else {
+                clear_pwd_input(true);
+                clear_pwd_input(false);
+                draw_pwd_input(true);
+                lcd_menu->status = ENTER_MASTER_PWD;
+                break;
+            }
         case ENTER_MASTER_PWD:
             clear_pwd_input(true);
             clear_pwd_input(false);

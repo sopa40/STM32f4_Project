@@ -1,7 +1,5 @@
 #include "password.h"
 
-//TODO: refactor = is_master ? :  with arrays
-
 #include <stdio.h>
 
 static struct Password m_pwd = {
@@ -90,7 +88,7 @@ static void _load_pwd(bool is_master)
     }
 }
 
-//TODO: if is set - 0; not 0 and not 255 - corrupted memory
+//TODO: refactor to return value: if is set - 0; error 255; not 0 and not 255 - corrupted memory
 static bool _is_pwd_set(bool is_master)
 {
     uint32_t start_addr = is_pwd_set_s[is_master];
@@ -116,7 +114,6 @@ void _set_attempts(bool is_master)
     else
         p->attempts = flash_read_byte(addr - 1);
 
-    printf("attempts are %u, in %u\n", p->attempts, is_master);
     if(!p->attempts)
         wait_to_try(is_master);
 }
@@ -133,7 +130,6 @@ bool init_pwd_settings(void)
 
     if (!is_init(false)) {
         if (_is_pwd_set(false)) {
-            printf("pwd is set\n");
             _load_pwd(false);
         }
         else {
