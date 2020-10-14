@@ -144,14 +144,14 @@ void wait_to_try(bool is_master);
 *	\brief 					Prints master password. Insecure, for debugging goals
 *
 */
-void get_m_pwd(void);
+//void get_m_pwd(void);
 
 /*!
 *
 *	\brief 					Prints master password. Insecure, for debugging goals
 *
 */
-void get_pwd(void);
+//void get_pwd(void);
 
 
 #endif // PASSWORD_H

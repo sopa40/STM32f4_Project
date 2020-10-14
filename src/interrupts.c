@@ -174,7 +174,7 @@ static void handle_center_btn(void)
         default:
             lcd_menu->status = SOME_ERROR;
             sk_lcd_cmd_clear(lcd);
-            printf("status is %u\n", lcd_menu->status);
+            //printf("status is %u\n", lcd_menu->status);
             lcd_putstring(lcd, "some error");
             break;
     }

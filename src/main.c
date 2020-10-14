@@ -48,11 +48,11 @@ void init_interrupts(void)
 	init_exti_interrupt(GPIOC, EXTI11, EXTI_TRIGGER_RISING);
 
 
-	nvic_set_priority(NVIC_SPI1_IRQ, 0 << 4);
-	nvic_set_priority(NVIC_SYSTICK_IRQ, 1 << 4);
-	nvic_set_priority(NVIC_EXTI0_IRQ, 2 << 4);
-	nvic_set_priority(NVIC_EXTI9_5_IRQ, 3 << 4);
-	nvic_set_priority(NVIC_EXTI15_10_IRQ, 3 << 4);
+	nvic_set_priority(NVIC_SPI1_IRQ, 1 << 4);
+	nvic_set_priority(NVIC_SYSTICK_IRQ, 2 << 4);
+	nvic_set_priority(NVIC_EXTI0_IRQ, 3 << 4);
+	nvic_set_priority(NVIC_EXTI9_5_IRQ, 4 << 4);
+	nvic_set_priority(NVIC_EXTI15_10_IRQ, 4 << 4);
 
 	nvic_enable_irq(NVIC_EXTI0_IRQ);
 	nvic_enable_irq(NVIC_EXTI9_5_IRQ);
@@ -66,29 +66,19 @@ void init_interrupts(void)
 int main (void)
 {
 	initialise_monitor_handles();   		//for debugging
-	init_variables();
- 	clock_init();
- 	spi_init();
 	rcc_periph_clock_enable(RCC_GPIOD);		//LEDS
 	rcc_periph_clock_enable(RCC_GPIOA);		//center btn and user btn
 	rcc_periph_clock_enable(RCC_GPIOC);		//other btns
 	rcc_periph_clock_enable(RCC_GPIOE);		//LCD display
 	rcc_periph_clock_enable(RCC_SYSCFG);	//for EXTI interrupts
-
 	glsk_pins_init(false);
 	/* configuration start */
 	sk_pin_set(sk_io_led_blue, true);
-
+	init_variables();
+ 	clock_init();
+ 	spi_init();
 	sk_tick_init(16000000ul / 10000ul);
-
 	init_lcd_with_settings();
-
-	flash_unlock();
-	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD, '1');
-	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD + 1, '0');
-	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD + 2, '1');
-	flash_write_byte(FIRST_ADDR_DEFAULT_M_PWD + 3, '0');
-	flash_lock();
 
 	if (!init_pwd_settings())
 		lcd_menu->status = PWD_NOT_SET;

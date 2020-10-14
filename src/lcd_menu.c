@@ -64,10 +64,11 @@ void init_menu_vars(void)
     lcd = get_lcd();
 }
 
-/** adds custom letter to CGRAM memory of display
- *  @lcd_disp: LCD display
- *  @addr: CGRAM address, where symbol should be written
- *  @letter_code: byte array of symbol code
+/*!
+*  \brief               adds custom letter to CGRAM memory of display
+*  \param[lcd_disp]     LCD display
+*  \param[addr]         CGRAM address, where symbol should be written
+*  \param[letter_code]  byte array of symbol code
 */
 static void _add_letter(struct sk_lcd *lcd_disp, uint8_t addr, const char letter_code[])
 {
@@ -143,9 +144,11 @@ void print_no_pwd_msg(void)
 
 void print_wait_time(uint32_t time)
 {
-    char buf[16];
+    uint8_t buf[16];
     snprintf(buf, sizeof(buf), "   %lu s", time);
-    print_error(buf);
+    clear_bottom_row();
+    sk_lcd_cmd_setaddr(lcd, 0x40, false);
+    lcd_putstring(lcd, buf);
 }
 
 void print_info(const char *str)

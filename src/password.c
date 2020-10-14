@@ -348,20 +348,23 @@ void wait_to_try(bool is_master)
     }
     flash_write_byte(addr, fac_val + 1);
     add_attempt(is_master);
-    clear_pwd_input(is_master);
-    draw_pwd_input(is_master);
+    if (get_lcd_menu()->status == ENTER_PWD || get_lcd_menu()->status == ENTER_MASTER_PWD) {
+        clear_pwd_input(is_master);
+        draw_pwd_input(is_master);
+    } else
+        print_welcome_msg();
 }
 
-void get_m_pwd(void)
-{
-    for (int i = 0; i < MASTER_PASS_LEN; i++) {
-        printf("%u\n", m_pwd.val[i]);
-    }
-}
-
-void get_pwd(void)
-{
-    for (int i = 0; i < PASS_LEN; i++) {
-        printf("%u\n", pwd.val[i]);
-    }
-}
+// void get_m_pwd(void)
+// {
+//     for (int i = 0; i < MASTER_PASS_LEN; i++) {
+//         printf("%u\n", m_pwd.val[i]);
+//     }
+// }
+//
+// void get_pwd(void)
+// {
+//     for (int i = 0; i < PASS_LEN; i++) {
+//         printf("%u\n", pwd.val[i]);
+//     }
+// }
